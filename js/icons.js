@@ -28,6 +28,19 @@ const P = {
   zap: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
   trophy: '<path d="M8 4h8v5a4 4 0 01-8 0z"/><path d="M8 6H4v1a4 4 0 004 4M16 6h4v1a4 4 0 01-4 4"/><path d="M12 13v4M8 21h8M10 17h4"/>',
   ticket: '<path d="M3 8a2 2 0 002-2h14a2 2 0 002 2v2a2 2 0 000 4v2a2 2 0 00-2 2H5a2 2 0 00-2-2v-2a2 2 0 000-4z"/><path d="M14 6v12" stroke-dasharray="2 2"/>',
+  chat: '<path d="M21 12a8 8 0 01-11.600 7.100L4 20l1.100-4.600A8 8 0 1121 12z"/><path d="M8.500 12h.01M12 12h.01M15.500 12h.01"/>',
+  wave: '<path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/>',
+  doc: '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h3"/>',
+  sparkle: '<path d="M12 3l1.800 5.200L19 10l-5.200 1.800L12 17l-1.800-5.200L5 10l5.200-1.800z"/><path d="M19 17l.7 1.800L21.500 19.500l-1.800.7L19 22l-.7-1.800-1.800-.7 1.800-.7z"/>',
+  bell: '<path d="M6 16V11a6 6 0 0112 0v5l1.500 2h-15z"/><path d="M10 21h4"/>',
+  send: '<path d="M4 12L20 4l-5 16-3.500-6.500z"/><path d="M11.500 13.500L20 4"/>',
+  grad: '<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11.500V16c0 1.500 2.700 3 6 3s6-1.500 6-3v-4.500"/>',
+  building: '<path d="M3 21h18M5 21V10M19 21V10M9 21V10M15 21V10M3 10l9-6 9 6"/>',
+  headset: '<path d="M4 15v-3a8 8 0 0116 0v3"/><rect x="3" y="14" width="4" height="6" rx="1.500"/><rect x="17" y="14" width="4" height="6" rx="1.500"/>',
+  video: '<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/>',
+  pen: '<path d="M4 20l4-1L19 8a2.100 2.100 0 00-3-3L5 16z"/><path d="M14 7l3 3"/>',
+  coin: '<circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.500 9.500h4a1.500 1.500 0 010 3h-3a1.500 1.500 0 000 3h4"/>',
+  gift2: '<rect x="3" y="9" width="18" height="11" rx="2"/><path d="M12 9v11M3 13h18"/><path d="M12 9c-2-4-6-3-5 0 .5 1.500 3 1 5 0zM12 9c2-4 6-3 5 0-.5 1.500-3 1-5 0z"/>',
 };
 
 // Maskot Terang Score: bulat biru, helm putih, visor gelap, antena bintang emas.

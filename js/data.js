@@ -4,15 +4,17 @@
 // Ambang pita status masih pertanyaan terbuka (tim data) → nilai sementara.
 export const BANDS = { onTrack: 75, close: 60 };
 
-// Ujian contoh: SKD CPNS, fokus satu subtes (TIU = Tes Intelegensia Umum).
-export const EXAM = {
-  label: 'CPNS · SKD', subtes: 'TIU', days: 52, max: 175,
-  squad: 'Squad SKD CPNS #4',
-  topics: [
-    ['Sinonim & Antonim', 78], ['Analogi Verbal', 71], ['Hitungan & Persen', 62],
-    ['Deret Angka', 58], ['Silogisme', 74], ['Penalaran Analitis', 66],
-  ],
+// Target ujian. Materi latihan contoh selalu soal penalaran (TIU/TPS/TBS mirip jenisnya):
+// verbal, numerik, dan logika. Skor maksimum subtes selain TIU belum pasti, bisa diubah saat lapor hasil.
+export const TARGETS = {
+  CPNS: { label: 'CPNS · SKD', short: 'CPNS', subtes: 'TIU', days: 52, max: 175, squad: 'Squad SKD CPNS #4' },
+  UTBK: { label: 'UTBK-SNBT', short: 'UTBK', subtes: 'TPS', days: 38, max: 100, squad: 'Squad UTBK-SNBT #12' },
+  LPDP: { label: 'LPDP', short: 'LPDP', subtes: 'TBS', days: 64, max: 100, squad: 'Squad LPDP #7' },
 };
+export const TOPICS = [
+  ['Sinonim & Antonim', 78], ['Analogi Verbal', 71], ['Hitungan & Persen', 62],
+  ['Deret Angka', 58], ['Silogisme', 74], ['Penalaran Analitis', 66],
+];
 
 // Bank soal TIU. Urutannya selang-seling antar topik (6 topik × 2 soal) supaya
 // 10 soal pertama selalu menyentuh semua topik.
@@ -79,19 +81,29 @@ export const MONTH_CAP = 600;
 // "Jurus Alumni": panduan singkat how-I-passed. Konten contoh, bukan dari alumni sungguhan.
 export const PLAYBOOKS = [
   {
-    id: 'pb1', title: 'Lolos passing grade TIU: strategi 8 minggu',
+    id: 'pb1', exam: 'CPNS', title: 'Lolos passing grade TIU: strategi 8 minggu',
     by: 'Alumni SKD CPNS (contoh)', min: 5,
     points: ['Minggu 1–2: ikut diagnostik, catat tiga topik paling lemah di Radar Skill.', 'Minggu 3–6: satu topik lemah per minggu lewat misi harian.', 'Minggu 7–8: latihan penuh berwaktu, lalu bedah soal yang salah.', 'Deret angka dan hitungan itu soal latihan, makin sering dikerjain makin cepat.'],
   },
   {
-    id: 'pb2', title: 'Atur waktu SKD: TIU, TWK, dan TKP',
+    id: 'pb2', exam: 'CPNS', title: 'Atur waktu SKD: TIU, TWK, dan TKP',
     by: 'Alumni SKD CPNS (contoh)', min: 4,
     points: ['Kerjain TIU numerik lebih dulu selagi kepala masih segar.', 'Kasih batas sekitar 90 detik per soal, tandai lalu lanjut.', 'Sisakan 10 menit terakhir buat soal yang ditandai.', 'Di TKP, pilih jawaban yang paling sesuai nilai pelayanan publik.'],
   },
   {
-    id: 'pb3', title: 'Tiga hari sebelum hari H: rutinitas biar nggak panik',
-    by: 'Alumni SKD CPNS (contoh)', min: 3,
+    id: 'pb3', exam: 'Umum', title: 'Tiga hari sebelum hari H: rutinitas biar nggak panik',
+    by: 'Alumni (contoh)', min: 3,
     points: ['H-3: latihan ringan saja, fokus ke topik yang sudah kamu kuasai.', 'H-2: cek lokasi tes, dokumen, dan perlengkapan.', 'H-1: istirahat cukup. Pakai Tiket Libur kalau perlu, Api Belajar tetap aman.', 'Pagi H: sarapan, datang lebih awal, tarik napas dalam sebelum mulai.'],
+  },
+  {
+    id: 'pb4', exam: 'UTBK', title: 'Atur ritme belajar 60 hari jelang UTBK',
+    by: 'Alumni UTBK (contoh)', min: 4,
+    points: ['Bagi hari jadi blok: 2 hari penalaran, 1 hari literasi, 1 hari ulasan.', 'Pakai Misi Harian buat jaga ritme, tryout penuh cukup seminggu sekali.', 'Catat soal yang salah dan ulangi tiga hari kemudian.', 'Tidur cukup itu bagian dari strategi, bukan hadiah.'],
+  },
+  {
+    id: 'pb5', exam: 'LPDP', title: 'Esai kontribusi: dari cerita pribadi ke rencana nyata',
+    by: 'Alumni LPDP (contoh)', min: 5,
+    points: ['Mulai dari satu masalah nyata di sekitarmu, bukan cita-cita yang terlalu umum.', 'Tulis tiga bagian: latar, rencana, dan dampak yang bisa diukur.', 'Minta dua orang membaca, lalu cek lewat Review Dokumen.', 'Sisakan waktu sehari penuh buat merapikan sebelum kirim.'],
   },
 ];
 

@@ -5,26 +5,15 @@ import { icon, mascot, say } from './icons.js';
 import * as St from './state.js';
 import { esc, today, addDays, toISO, fromISO, longDate, cfg, examDate, daysToExam, isDone,
   streakAtRisk, band, weeklySeries, scoreInfo, squad, addPoints, premiumLeft } from './state.js';
+import { $, $$, rp, initial, ribbon, openDlg, closeDlg, hooks } from './ui.js';
+import * as CP from './copy.js';
+import * as AI from './ai.js';
+import * as KT from './kartu.js';
+import * as EX from './explore.js';
 
-const $ = (s, r = document) => r.querySelector(s);
-const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const S = () => St.S;
-const rp = (n) => `Rp${n.toLocaleString('id-ID')}`;
 
 /* ------------------------------------------------------------------ utilitas UI */
-function ribbon(text) {
-  const el = document.createElement('div');
-  el.textContent = text;
-  $('#ribbon').appendChild(el);
-  setTimeout(() => el.remove(), 3700);
-}
-function openDlg(title, body) {
-  $('#dlg').innerHTML = `<div class="dlg-body"><div class="dlg-head"><h2 id="dlg-title">${title}</h2>
-    <button class="icon-btn" data-act="dlg-close" aria-label="Tutup">${icon('close')}</button></div>${body}</div>`;
-  if (!$('#dlg').open) $('#dlg').showModal();
-}
-const closeDlg = () => { if ($('#dlg').open) $('#dlg').close(); };
-const initial = (n) => esc((n || '?').trim().charAt(0).toUpperCase());
 const bandPill = (v) => { const m = BAND_META[band(v)]; return `<span class="gap-val">${icon(m.icon, 16)} ${v} · ${m.label}</span>`; };
 function applyTheme() {
   const r = document.documentElement;
@@ -52,17 +41,50 @@ const weekDots = () => {
 const stateLabel = (st) => ({ calibrating: 'Lagi Kenalan', terukur: 'Terukur', terkalibrasi: 'Sudah Pas' }[st]);
 
 /* ------------------------------------------------------------------ navigasi */
+// m = tampil di bilah bawah seluler; mo = hanya seluler (hub); tanpa flag = hanya desktop.
 const NAV = [
-  ['beranda', 'Beranda', 'home'], ['squad', '#SquadTerang', 'users'],
-  ['poin', 'Poin & Jurus', 'gift'], ['passport', 'Paspor', 'passport'], ['profil', 'Profil', 'user'],
+  { items: [['beranda', 'Beranda', 'home', { m: 1 }]] },
+  { items: [['ai', 'AI', 'sparkle', { mo: 1 }]] },
+  { g: 'Artificial Intelligence', items: [['tanya', 'Tanya AI', 'chat'], ['interview', 'AI Interview', 'wave', { badge: 'BARU' }], ['review', 'Review Dokumen', 'doc', { badge: 'BARU' }]] },
+  { g: 'Menu Utama', items: [['kartu', 'Kartu Ujian', 'ticket']] },
+  { g: 'Belajar Bareng', items: [['squad', '#SquadTerang', 'users', { m: 1 }]] },
+  { g: 'Hadiah & Catatan', items: [['poin', 'Poin & Jurus', 'gift', { m: 1 }], ['passport', 'Paspor', 'passport']] },
+  { items: [['profil', 'Profil', 'user', { m: 1 }]] },
 ];
+const ALL_NAV = NAV.flatMap((g) => g.items);
+const AI_ROUTES = ['tanya', 'interview', 'review'];
 function renderNav(route) {
-  const group = { laporan: 'beranda', daily: 'beranda', 'lapor-hasil': 'beranda' }[route] || route;
-  const dark = S().theme === 'dark';
+  const grp = { laporan: 'beranda', daily: 'beranda', 'lapor-hasil': 'beranda' }[route] || route;
+  const s = S(); const dark = s.theme === 'dark'; const left = premiumLeft();
   $('#nav').hidden = route === 'onboarding';
-  $('#nav').innerHTML = `<div class="brand"><span class="brand-mark">${mascot('happy', 36)}</span>Terang Score</div>` +
-    NAV.map(([id, label, ic]) => `<a href="#/${id}" ${id === group ? 'aria-current="page"' : ''}>${icon(ic, 22)}<span>${label}</span></a>`).join('') +
-    `<div class="spacer"></div><button class="nav-link nav-desktop" data-act="theme-flip" aria-label="${dark ? 'Ganti ke mode terang' : 'Ganti ke mode gelap'}">${icon(dark ? 'sun' : 'moon', 22)}<span>${dark ? 'Mode Terang' : 'Mode Gelap'}</span></button>`;
+  const links = NAV.map((g) => (g.g ? `<div class="nav-label desk-only">${g.g}</div>` : '') + g.items.map(([id, text, ic, o = {}]) => {
+    const cur = id === grp || (id === 'ai' && AI_ROUTES.includes(route));
+    return `<a class="${o.mo ? 'mob-only' : o.m ? '' : 'desk-only'}" href="#/${id}" ${cur ? 'aria-current="page"' : ''}>${icon(ic, 22)}<span>${text}</span>${o.badge ? `<em class="new">${o.badge}</em>` : ''}</a>`;
+  }).join('')).join('');
+  const card = `<div class="user-card desk-only"><div class="say" style="gap:10px"><span class="avatar">${initial(s.name || 'Kamu')}</span><div><b>${esc(s.name || 'Kamu')}</b><br><span class="pill ${left > 0 ? 'gold' : 'tint'}">${left > 0 ? 'PREMIUM' : 'GRATIS'}</span></div></div>
+    <p class="small muted" style="margin:8px 0">Kredit AI: ${s.credits.toLocaleString('id-ID')} <button class="btn link small" data-act="topup" style="min-height:0;padding:0 4px">Isi Ulang</button></p>
+    ${left > 0 ? `<a class="btn block small" href="#/poin">Premium sisa ${left} hari</a>` : `<a class="btn premium block small" href="#/poin">${icon('crown', 16)} Upgrade ke Premium</a>`}</div>`;
+  $('#nav').innerHTML = `<div class="brand"><span class="brand-mark">${mascot('happy', 36)}</span>Terang Score</div>${links}<div class="spacer"></div>${card}` +
+    `<button class="nav-link nav-desktop" data-act="theme-flip" aria-label="${dark ? 'Ganti ke mode terang' : 'Ganti ke mode gelap'}">${icon(dark ? 'sun' : 'moon', 22)}<span>${dark ? 'Mode Terang' : 'Mode Gelap'}</span></button>`;
+}
+const titleOf = (route) => TITLES[route] || ALL_NAV.find((n) => n[0] === route)?.[1] || 'Dashboard';
+function renderTopbar(route) {
+  const dark = S().theme === 'dark';
+  const unseen = CP.notifications().filter((n) => !S().notifSeen.includes(n.id)).length;
+  $('#topbar').hidden = route === 'onboarding';
+  $('#topbar').innerHTML = `<span class="crumb">Terang Score <span class="muted">›</span> <b>${esc(titleOf(route))}</b></span>
+    <div class="topbar-r"><button class="icon-btn bell" data-act="notif" aria-label="Notifikasi, ${unseen} belum dibaca">${icon('bell')}${unseen ? `<i class="badge-n">${unseen}</i>` : ''}</button>
+    <button class="icon-btn mob-only" data-act="theme-flip" aria-label="Ganti mode tampilan">${icon(dark ? 'sun' : 'moon')}</button></div>`;
+}
+function notifDialog() {
+  const list = CP.notifications();
+  openDlg('Notifikasi', list.map((n) => `<div class="notif"><span class="stat-ic">${icon(n.ic, 20)}</span><div><b>${esc(n.title)}</b><p class="small">${esc(n.body)}</p>
+    ${n.href ? `<a class="btn small" href="${n.href}" data-act="dlg-close">${esc(n.cta)}</a>` : ''}</div></div>`).join(''));
+  S().notifSeen = list.map((n) => n.id); St.save(); renderTopbar(current);
+}
+function quickLinks() {
+  return `<div class="grid cols-3 quick">${[['#/tanya', 'chat', 'Tanya AI', 'Bingung sama soal? Tanya aja.'], ['#/kartu', 'ticket', 'Kartu Ujian', 'Simulasi ujian dan harganya.'], ['#/profil?tab=eksplor', 'sparkle', 'Eksplor Kategori Lain', 'Mapel umum, kuliah, dan karier.']]
+    .map(([h, ic, t, d]) => `<a class="card linkcard" href="${h}"><span class="stat-ic">${icon(ic, 20)}</span><div><b>${t}</b><p class="small muted">${d}</p></div></a>`).join('')}</div>`;
 }
 
 /* ------------------------------------------------------------------ BERANDA */
@@ -87,10 +109,8 @@ function viewHome() {
   const sq = squad(); const done = isDone(); const risk = streakAtRisk();
   const dayText = d > 0 ? `${d} hari lagi` : d === 0 ? 'hari ini' : `${-d} hari lalu`;
   const weak = info.weak.name;
-  let mood = 'happy', msg = calib ? '' : `Hai! Hari ini kita asah <b>${esc(weak)}</b> yuk. Cuma 10 soal kok.`;
-  if (calib) { mood = 'think'; msg = 'Aku lagi kenalan sama kemampuanmu nih. Kerjain beberapa soal ya, biar skornya makin akurat!'; }
-  else if (risk) { mood = 'cheer'; msg = `Api Belajarmu hampir padam! Kerjain 10 soal aja udah cukup, yuk sebelum hari habis.`; }
-  else if (done) { mood = 'proud'; msg = 'Misi hari ini beres! Keren banget. Besok kita lanjut lagi ya.'; }
+  const mood = calib ? 'think' : risk ? 'cheer' : done ? 'proud' : 'happy';
+  const msg = CP.mascotLine({ calib, risk, done, weak: esc(weak), streak: S().streak });
   const warn = d > 0 && d <= 14 ? `<div class="card warn"><p class="warn-title">${icon('alert')} Ujian ${esc(c.label)} tinggal ${d} hari</p>
       <p>Waktunya latihan penuh dan fokus ke topik yang paling lemah. Kamu nggak sendirian, squad nemenin kamu.</p></div>` : '';
   const report = d <= 0 && d >= -7 && st !== 'terkalibrasi' ? `<div class="card tint"><div class="card-head"><h2>Udah ujian? Ceritain hasilnya, yuk!</h2></div>
@@ -125,9 +145,9 @@ function viewHome() {
   const teaser = `<div class="card"><div class="card-head"><h2>Rapor Mingguan</h2><a class="btn link small" href="#/laporan">Buka ${icon('chevron', 14)}</a></div>
       <p class="finding">${icon('chart')}<span>${calib ? 'Rapor mingguan muncul setelah dua minggu data latihan.'
         : `Skor minggu ini ${delta >= 0 ? 'naik' : 'turun'} <b>${Math.abs(delta)} poin</b>. Paling jago: <b>${esc(info.strong.name)}</b>, paling perlu diasah: <b>${esc(info.weak.name)}</b>.`}</span></p></div>`;
-  return `<div class="page-head"><div><h1>Halo${S().name ? ', ' + esc(S().name) : ''}!</h1>
+  return `<div class="page-head"><div><h1>${CP.greeting()}</h1>
       <p>Target ${esc(c.label)} (fokus ${c.subtes}) · ${longDate(examDate())} (${dayText})</p></div></div>
-    <div class="stack"><div class="hero">${say(mood, msg)}</div>${warn}${report}
+    <div class="stack"><div class="hero">${say(mood, msg)}</div>${quickLinks()}${warn}${report}
     <div class="grid home-grid"><div class="stack">${ring}<div class="card"><div class="card-head"><h2>Radar Skill</h2><span class="pill tint">${icon('target', 16)} Topik ${c.subtes}</span></div>
       <p class="small muted" style="margin-bottom:6px">Biar kamu tau topik mana yang udah jago dan mana yang perlu diasah.</p>${gapRows()}</div></div>
     <div class="stack">${daily}${streak}${squadCard}${teaser}</div></div></div>`;
@@ -189,13 +209,14 @@ function showTip(i) {
 
 /* ------------------------------------------------------------------ QUIZ (Misi Harian) */
 let Q = null;
-function startQuiz(focus) {
+function startQuiz(focus, mode, cardId) {
   let list = D.BANK.slice();
   if (focus) list = [...list.filter((q) => q.topic === focus), ...list.filter((q) => q.topic !== focus)];
-  Q = { list: list.slice(0, 10), i: 0, picked: null, wrong: [], right: 0, finished: false, focus };
+  const card = cardId ? KT.cardById(cardId) : null;
+  Q = { list: list.slice(0, 10), i: 0, picked: null, wrong: [], right: 0, finished: false, focus, mode: mode === 'tryout' ? 'tryout' : 'daily', cardName: card ? card.name : '' };
 }
 function viewDaily(params) {
-  if (!Q) startQuiz(params.get('topic'));
+  if (!Q) startQuiz(params.get('topic'), params.get('mode'), params.get('card'));
   if (Q.finished) return viewDailyDone();
   const q = Q.list[Q.i];
   const letters = ['A', 'B', 'C', 'D'];
@@ -209,8 +230,9 @@ function viewDaily(params) {
   const fb = Q.picked == null ? '' : `<div class="feedback" role="status"><div class="say">${mascot(ok ? 'cheer' : 'think', 52)}<div><b>${ok ? 'Tepat banget!' : 'Belum pas, tapi nggak apa-apa.'}</b>
       <p>${esc(q.e)}</p>${ok ? '' : `<p class="small muted" style="margin-top:6px">Topik <b>${esc(q.topic)}</b> masuk Radar Skill-mu buat diasah lagi.</p>`}</div></div>
       <div class="btn-row" style="margin-top:12px"><button class="btn primary" data-act="next">${Q.i === 9 ? 'Selesai' : 'Soal berikutnya'}</button></div></div>`;
-  return `<div class="quiz"><div class="page-head"><div><h1>Misi Harian</h1><p>${Q.focus ? `Fokus: ${esc(Q.focus)}` : 'Satu misi kecil buat jaga Api Belajarmu'}</p></div>
-      <a class="btn small" href="#/beranda">Keluar</a></div>
+  const tryout = Q.mode === 'tryout';
+  return `<div class="quiz"><div class="page-head"><div><h1>${tryout ? 'Simulasi Ujian' : 'Misi Harian'}</h1><p>${tryout ? esc(Q.cardName) + ' · versi contoh 10 soal' : Q.focus ? `Fokus: ${esc(Q.focus)}` : 'Satu misi kecil buat jaga Api Belajarmu'}</p></div>
+      <a class="btn small" href="${tryout ? '#/kartu?sub=saya' : '#/beranda'}">Keluar</a></div>
     <div class="card"><div class="goal-top"><span class="muted small">Soal ${Q.i + 1} dari 10 · ${esc(q.topic)}</span></div>
       <div class="bar" style="margin-bottom:16px" role="progressbar" aria-valuemin="0" aria-valuemax="10" aria-valuenow="${Q.i + (Q.picked != null ? 1 : 0)}"><i style="width:${(Q.i + (Q.picked != null ? 1 : 0)) * 10}%"></i></div>
       <h2>${esc(q.q)}</h2>${opts}${fb}</div></div>`;
@@ -218,6 +240,7 @@ function viewDaily(params) {
 function finishDaily() {
   Q.finished = true;
   const s = S();
+  if (Q.mode === 'tryout') { Q.firstToday = false; return; } // simulasi tidak mengubah Api Belajar dan poin
   s.flagged = [...new Set([...s.flagged, ...Q.wrong])].slice(-4);
   Q.firstToday = !isDone();
   if (Q.firstToday) {
@@ -225,6 +248,7 @@ function finishDaily() {
     s.streak += 1; s.bestStreak = Math.max(s.bestStreak, s.streak);
     if (!s.studyDates.includes(toISO(today()))) s.studyDates.push(toISO(today()));
     s.userDays = Math.min(4, s.userDays + 1); s.sessions += 1;
+    const ms = CP.milestone(s.streak); if (ms) ribbon(ms);
     Q.got = addPoints(20, 'Misi harian selesai');
     if (s.scoreState === 'calibrating' && s.sessions >= 3) { s.scoreState = 'terukur'; ribbon('Skormu sekarang sudah Terukur!'); }
     checkSquadGoal();
@@ -232,6 +256,9 @@ function finishDaily() {
   St.save();
 }
 function viewDailyDone() {
+  if (Q.mode === 'tryout') return `<div class="quiz"><div class="card done-ring">${mascot(Q.right >= 7 ? 'proud' : 'cheer', 110)}<h1>Simulasi selesai!</h1>
+      <p>${esc(Q.cardName)} · ${Q.right} benar dari 10</p><p class="small muted">Simulasi nggak mengubah Api Belajar dan poinmu. Santai aja, ini buat latihan.</p>
+      <div class="btn-row" style="justify-content:center"><a class="btn primary" href="#/kartu?sub=saya">Kembali ke Kartu Ujian</a></div></div></div>`;
   return `<div class="quiz"><div class="card done-ring">${mascot(Q.right >= 7 ? 'proud' : 'cheer', 110)}
       <div class="flame lit pop">${icon('flame', 30)}</div>
       <h1>Misi harian beres!</h1>
@@ -327,7 +354,7 @@ function viewPoints() {
       <p class="small muted">${p.months > 1 ? `≈ ${rp(perMonth)}/bulan · hemat ${save}%` : 'Bayar per bulan'}</p><p class="small">${esc(p.note)}</p>
       <button class="btn${p.popular ? ' primary' : ''} block" data-act="plan" data-id="${p.id}" style="margin-top:6px">Pilih paket</button></div>`;
   }).join('');
-  const list = D.PLAYBOOKS.map((p) => `<div class="item"><div><b>${esc(p.title)}</b>
+  const list = D.PLAYBOOKS.filter((p) => p.exam === 'Umum' || p.exam === s.target).map((p) => `<div class="item"><div><b>${esc(p.title)}</b>
     <p class="small muted">${esc(p.by)} · ${p.min} menit baca · ditinjau tim Terang</p></div><button class="btn small" data-act="pb-open" data-id="${p.id}">Baca</button></div>`).join('');
   return `<div class="page-head"><div><h1>Poin & Jurus Alumni</h1><p>Poin dikasih buat kemajuan nyata, bukan lamanya kamu nongkrong di layar.</p></div></div>
     <div class="stack"><div class="grid cols-2" style="align-items:start">
@@ -340,6 +367,8 @@ function viewPoints() {
     <div class="card"><div class="card-head"><h2>Paket Premium</h2></div><p class="small muted" style="margin-bottom:16px">Semua paket buka: ${D.PLAN_FEATURES.join(' · ')}. Harga di bawah masih contoh, belum final.</p><div class="plans">${plans}</div></div>
     <div class="card"><h2 style="margin-bottom:6px">Jurus Alumni</h2>${list}
       <p class="small muted" style="margin-top:8px">Konten contoh buat prototipe, bukan dari alumni sungguhan.</p></div>
+    <div class="card"><div class="say">${mascot('cheer', 56)}<div><h2>Ajak Teman, Dapet Poin</h2><p class="small muted">Bagikan kodemu. Tiap teman yang gabung dan selesaiin cek posisi, kalian berdua dapet bonus poin (jumlahnya contoh).</p></div></div>
+      <div class="btn-row" style="margin-top:12px"><span class="refcode">${esc(s.refCode)}</span><button class="btn small" data-act="copy-ref">${icon('link', 16)} Salin kode</button></div></div>
     <div class="card"><h2 style="margin-bottom:6px">Riwayat poin</h2>${s.ledger.slice(0, 6).map((l) => `<div class="item"><span>${esc(l.t)}<span class="small muted"> · ${fromISO(l.d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</span></span><b>${l.p > 0 ? '+' : ''}${l.p}</b></div>`).join('')}</div></div>`;
 }
 
@@ -400,14 +429,15 @@ function viewResult() {
 }
 
 /* ------------------------------------------------------------------ ONBOARDING */
-const OB = { step: 0, date: '', i: 0, picked: null, wrong: [] };
+const OB = { step: 0, date: '', i: 0, picked: null, wrong: [], target: 'CPNS' };
 const obQuestions = () => D.DIAG_IDX.map((k) => D.BANK[k]);
 function viewOnboarding() {
   if (OB.step === 0) {
-    if (!OB.date) OB.date = toISO(addDays(today(), cfg().days));
+    if (!OB.date) OB.date = toISO(addDays(today(), D.TARGETS[OB.target].days));
     return `<div class="quiz" style="margin:0 auto"><div class="page-head"><div><h1>Selamat datang di Terang Score!</h1><p>Belum perlu bikin akun. Kenalan dulu yuk.</p></div></div>
       <div class="card"><div class="say" style="margin-bottom:16px">${mascot('cheer', 80)}<div class="bubble">Hai, aku maskot Terang! Aku bakal nemenin kamu belajar. Yuk kita mulai dari ngecek posisimu sekarang, cuma 5 soal.</div></div>
-      <div class="label" style="margin-bottom:8px">Target ujianmu</div><div class="chips"><span class="pill tint">${icon('target', 16)} ${esc(cfg().label)} · subtes ${cfg().subtes}</span></div>
+      <div class="label" style="margin-bottom:8px">Target ujianmu</div><div class="chips" role="group" aria-label="Target ujian">${Object.entries(D.TARGETS).map(([k, v]) => `<button class="chip" data-act="ob-target" data-k="${k}" aria-pressed="${OB.target === k}">${v.short}</button>`).join('')}</div>
+      <p class="small muted" style="margin-top:6px">Mau belajar hal lain, bukan ujian? Nanti ada Eksplor Kategori Lain di Profil.</p>
       <div class="field" style="margin-top:16px"><label for="ob-date">Tanggal ujian</label><input id="ob-date" type="date" value="${OB.date}" data-change="ob-date"></div>
       <button class="btn primary" data-act="ob-start">Mulai cek posisi (5 menit)</button></div></div>`;
   }
@@ -428,12 +458,17 @@ function viewOnboarding() {
 }
 
 /* ------------------------------------------------------------------ PROFIL */
-function viewProfile() {
-  const s = S(); const minor = s.age !== '18+';
-  return `<div class="page-head"><div><h1>Profil & Pengaturan</h1><p>Privasi, pengingat, dan tampilan</p></div></div>
-    <div class="stack"><div class="grid cols-2" style="align-items:start"><div class="card"><h2 style="margin-bottom:12px">Profilmu</h2>
+function viewProfile(params) {
+  const s = S(); const minor = s.age !== '18+'; const tab = params.get('tab') === 'eksplor' ? 'eksplor' : 'pengaturan';
+  const tabs = `<div class="chips tabs" role="tablist"><a class="chip tab${tab === 'pengaturan' ? ' on' : ''}" href="#/profil" role="tab" aria-selected="${tab === 'pengaturan'}">${icon('user', 16)} Pengaturan</a>
+    <a class="chip tab${tab === 'eksplor' ? ' on' : ''}" href="#/profil?tab=eksplor" role="tab" aria-selected="${tab === 'eksplor'}">${icon('sparkle', 16)} Eksplor Kategori Lain</a></div>`;
+  const head = `<div class="page-head"><div><h1>Profil</h1><p>Pengaturan, target ujian, dan jelajah Terang AI</p></div></div>`;
+  if (tab === 'eksplor') return `${head}<div class="stack">${tabs}${EX.viewExploreTab()}</div>`;
+  const reminders = CP.REMINDERS.map((r) => `<div class="item"><div><span class="tag">${esc(r.when)}</span><p style="margin-top:4px"><b>${esc(r.title)}</b></p><p class="small muted">${esc(r.body)}</p></div></div>`).join('');
+  return `${head}<div class="stack">${tabs}<div class="grid cols-2" style="align-items:start"><div class="card"><h2 style="margin-bottom:12px">Profilmu</h2>
       <div class="field"><label for="p-name">Nama</label><input id="p-name" type="text" value="${esc(s.name)}" maxlength="30" data-change="set-name"></div>
-      <div class="field"><label>Target ujian</label><div><span class="pill tint">${icon('target', 16)} ${esc(cfg().label)} · subtes ${cfg().subtes}</span></div></div>
+      <div class="field"><label>Target ujian</label><div class="chips" role="group" aria-label="Target ujian">${Object.entries(D.TARGETS).map(([k, v]) => `<button class="chip" data-act="set-target" data-k="${k}" aria-pressed="${s.target === k}">${v.short}</button>`).join('')}</div>
+      <span class="small muted">${esc(cfg().label)} · subtes ${cfg().subtes}. Mau belajar hal lain? Buka <a href="#/profil?tab=eksplor">Eksplor Kategori Lain</a>.</span></div>
       <div class="field"><label for="p-date">Tanggal ujian</label><input id="p-date" type="date" value="${s.examDate}" data-change="set-date"></div>
       <div class="field"><label for="p-age">Kelompok usia</label><select id="p-age" data-change="set-age"><option value="u16" ${s.age === 'u16' ? 'selected' : ''}>Di bawah 16</option><option value="16-17" ${s.age === '16-17' ? 'selected' : ''}>16–17</option><option value="18+" ${s.age === '18+' ? 'selected' : ''}>18 ke atas</option></select>
       <span class="small muted">Fitur sosial dibuka bertahap sesuai usia (PP Tunas, UU PDP Pasal 25).</span></div></div>
@@ -442,17 +477,23 @@ function viewProfile() {
       <label class="check" style="margin-top:14px"><input type="checkbox" data-change="set-motion" ${s.reduceMotion ? 'checked' : ''}><span>Kurangi gerakan (animasi dimatikan)</span></label></div>
     <div class="card"><h2 style="margin-bottom:12px">Pengingat</h2>
       <div class="field"><label for="p-hour">Jam belajar biasanya</label><select id="p-hour" data-change="set-hour">${[6, 12, 16, 19, 21].map((h) => `<option value="${h}" ${h === s.reminderHour ? 'selected' : ''}>${String(h).padStart(2, '0')}.00</option>`).join('')}</select></div>
-      <div class="field"><label for="p-ch">Lewat mana?</label><select id="p-ch" data-change="set-channel"><option value="inapp" ${s.channel === 'inapp' ? 'selected' : ''}>Notifikasi di aplikasi</option><option value="wa" ${s.channel === 'wa' ? 'selected' : ''} ${minor ? 'disabled' : ''}>WhatsApp (khusus pengguna dewasa)</option></select></div></div></div></div>
+      <div class="field"><label for="p-ch">Lewat mana?</label><select id="p-ch" data-change="set-channel"><option value="inapp" ${s.channel === 'inapp' ? 'selected' : ''}>Notifikasi di aplikasi</option><option value="wa" ${s.channel === 'wa' ? 'selected' : ''} ${minor ? 'disabled' : ''}>WhatsApp (khusus pengguna dewasa)</option></select></div></div>
+    <div class="card"><h2 style="margin-bottom:4px">Menu lainnya</h2><div class="btn-row" style="margin-top:8px"><a class="btn small" href="#/kartu">${icon('ticket', 16)} Kartu Ujian</a><a class="btn small" href="#/passport">${icon('passport', 16)} Paspor Belajar</a><a class="btn small" href="#/laporan">${icon('chart', 16)} Rapor Mingguan</a></div>
+      <p class="small muted" style="margin-top:10px">Kredit AI: ${s.credits.toLocaleString('id-ID')} · ${premiumLeft() > 0 ? `Premium sisa ${premiumLeft()} hari` : 'Paket Gratis'}</p></div></div></div>
+    <div class="card"><h2 style="margin-bottom:4px">Contoh pengingat dari Terang</h2><p class="small muted" style="margin-bottom:8px">Pengingat selalu bisa kamu atur dan nggak pernah menyalahkan. Ini gambaran isinya.</p>${reminders}</div>
     <div class="demo"><h2 style="margin-bottom:4px">Panel Demo</h2><p class="small muted" style="margin-bottom:12px">Buat nyobain berbagai keadaan layar tanpa nunggu. Cuma ada di prototipe.</p>
       <div class="label small" style="margin-bottom:6px">Keadaan skor</div><div class="seg" role="group" aria-label="Keadaan skor">${['calibrating', 'terukur', 'terkalibrasi'].map((k) => `<button data-act="demo-state" data-k="${k}" aria-pressed="${s.scoreState === k}">${stateLabel(k)}</button>`).join('')}</div>
       <div class="btn-row" style="margin-top:14px"><button class="btn small" data-act="demo-risk">${s.forceRisk ? 'Matikan' : 'Simulasikan'} Api Belajar hampir padam</button>
       <button class="btn small" data-act="demo-exam">Simulasikan ujian udah lewat</button><button class="btn small" data-act="demo-near">Simulasikan ujian 10 hari lagi</button>
-      <button class="btn small" data-act="demo-squad">Squad selesai semua</button><button class="btn small" data-act="demo-onboard">Ulangi onboarding</button><button class="btn small" data-act="demo-reset">Reset data demo</button></div></div></div>`;
+      <button class="btn small" data-act="demo-squad">Squad selesai semua</button><button class="btn small" data-act="demo-premium">${premiumLeft() > 0 ? 'Matikan' : 'Aktifkan'} Premium</button><button class="btn small" data-act="demo-onboard">Ulangi onboarding</button><button class="btn small" data-act="demo-reset">Reset data demo</button></div></div></div>`;
 }
 
 /* ------------------------------------------------------------------ router & render */
-const VIEWS = { beranda: viewHome, laporan: viewReport, daily: viewDaily, 'lapor-hasil': viewResult, squad: viewSquad, poin: viewPoints, passport: viewPassport, profil: viewProfile, onboarding: viewOnboarding };
-const TITLES = { laporan: 'Rapor Mingguan', daily: 'Misi Harian', 'lapor-hasil': 'Lapor Hasil', onboarding: 'Selamat Datang' };
+const VIEWS = {
+  beranda: viewHome, laporan: viewReport, daily: viewDaily, 'lapor-hasil': viewResult, squad: viewSquad, poin: viewPoints, passport: viewPassport,
+  profil: viewProfile, onboarding: viewOnboarding, tanya: AI.viewTanya, interview: AI.viewInterview, review: AI.viewReview, ai: AI.viewAi, kartu: KT.viewKartu,
+};
+const TITLES = { laporan: 'Rapor Mingguan', daily: 'Misi Harian', 'lapor-hasil': 'Lapor Hasil', onboarding: 'Selamat Datang', ai: 'Artificial Intelligence', passport: 'Paspor Belajar' };
 let current = 'beranda';
 function render(keepScroll) {
   const [path, qs] = (location.hash.replace(/^#\//, '') || 'beranda').split('?');
@@ -460,14 +501,16 @@ function render(keepScroll) {
   if (!S().onboarded && current !== 'onboarding') { location.hash = '#/onboarding'; return; }
   const main = $('#main'); const y = window.scrollY;
   main.innerHTML = VIEWS[current](new URLSearchParams(qs || ''));
-  renderNav(current);
-  document.title = `Terang Score — ${TITLES[current] || NAV.find((n) => n[0] === current)?.[1] || 'Dashboard'}`;
+  renderNav(current); renderTopbar(current);
+  document.title = `Terang Score — ${titleOf(current)}`;
   requestAnimationFrame(() => {
     $$('.ring-val').forEach((c) => { c.style.strokeDasharray = `${c.dataset.target} 100`; });
     if (current === 'squad') { tickRoom(); if (!SQ.timer) SQ.timer = setInterval(tickRoom, 1000); }
+    AI.after();
   });
   if (keepScroll) window.scrollTo(0, y); else { window.scrollTo(0, 0); }
 }
+hooks.render = (keep) => render(keep);
 window.addEventListener('hashchange', () => {
   if (!location.hash.startsWith('#/daily')) Q = null; // keluar dari misi harian = sesi kuis dibersihkan
   if (!location.hash.startsWith('#/lapor-hasil')) RS.step = 1;
@@ -481,6 +524,14 @@ function resetFor(over) {
 }
 const ACT = {
   'dlg-close': () => closeDlg(),
+  notif: () => notifDialog(),
+  topup: () => AI.topupDialog(),
+  'copy-ref': async () => { try { await navigator.clipboard.writeText(S().refCode); ribbon('Kode disalin. Tinggal bagikan!'); } catch (e) { ribbon(`Kodemu: ${S().refCode}`); } },
+  'set-target': (el) => {
+    const s = S(); s.target = el.dataset.k; s.examDate = toISO(addDays(today(), D.TARGETS[s.target].days)); s.flagged = []; St.save(); Q = null;
+    ribbon(`Target diganti ke ${D.TARGETS[s.target].label}`); render(true);
+  },
+  'demo-premium': () => { const s = S(); if (premiumLeft() > 0) { s.premiumUntil = null; } else { s.premiumUntil = toISO(addDays(today(), 7)); s.trialClaimed = true; } St.save(); render(true); },
   theme: (el) => { S().theme = el.dataset.k; St.save(); applyTheme(); render(true); },
   'theme-flip': () => { S().theme = S().theme === 'dark' ? 'light' : 'dark'; St.save(); applyTheme(); render(true); },
   'ring-detail': () => {
@@ -554,14 +605,15 @@ const ACT = {
   'demo-exam': () => { S().examDate = toISO(addDays(today(), -1)); St.save(); ribbon('Tanggal ujian diset kemarin. Cek Beranda.'); render(true); },
   'demo-near': () => { S().examDate = toISO(addDays(today(), 10)); St.save(); ribbon('Ujian 10 hari lagi. Cek Beranda.'); render(true); },
   'demo-squad': () => { S().squadAllDone = true; St.save(); location.hash = '#/squad'; render(); if (checkSquadGoal()) { render(true); } setTimeout(celebrate, 150); },
-  'demo-onboard': () => { St.S.onboarded = false; Object.assign(OB, { step: 0, date: '', i: 0, picked: null, wrong: [] }); St.save(); location.hash = '#/onboarding'; render(); },
+  'demo-onboard': () => { St.S.onboarded = false; Object.assign(OB, { step: 0, date: '', i: 0, picked: null, wrong: [], target: 'CPNS' }); St.save(); location.hash = '#/onboarding'; render(); },
   'demo-reset': () => { resetFor({}); Q = null; applyTheme(); ribbon('Data demo direset'); location.hash = '#/beranda'; render(); },
+  'ob-target': (el) => { OB.target = el.dataset.k; OB.date = toISO(addDays(today(), D.TARGETS[OB.target].days)); render(true); },
   'ob-start': () => { OB.step = 1; OB.i = 0; OB.picked = null; OB.wrong = []; render(); },
   'ob-pick': (el) => { if (OB.picked != null) return; const q = obQuestions()[OB.i]; OB.picked = +el.dataset.i; if (OB.picked !== q.a) OB.wrong.push(q.topic); render(true); },
   'ob-next': () => { if (OB.i === obQuestions().length - 1) OB.step = 2; else { OB.i++; OB.picked = null; } render(); },
   'ob-save': () => {
     const name = ($('#ob-name').value || '').trim();
-    resetFor({ name, examDate: OB.date || toISO(addDays(today(), cfg().days)), scoreState: 'calibrating', streak: 0, bestStreak: 0, studyDates: [], userDays: 0,
+    resetFor({ target: OB.target, name, examDate: OB.date || toISO(addDays(today(), D.TARGETS[OB.target].days)), scoreState: 'calibrating', streak: 0, bestStreak: 0, studyDates: [], userDays: 0,
       sessions: 0, points: 0, earnedMonth: 0, ledger: [], flagged: [...new Set(OB.wrong)], restPasses: 2 });
     addPoints(10, 'Diagnostik selesai'); St.save(); Q = null; location.hash = '#/beranda'; render();
   },
@@ -576,7 +628,8 @@ const ACT = {
   'res-mentor': () => { S().kating = true; St.save(); ribbon('Makasih! Tim kami bakal verifikasi statusmu.'); render(true); },
   'res-goal': () => {
     const s = S();
-    resetFor({ name: s.name, points: s.points, earnedMonth: s.earnedMonth, ledger: s.ledger, age: s.age, premiumUntil: s.premiumUntil, trialClaimed: s.trialClaimed, vouchers: s.vouchers,
+    resetFor({ target: s.target, name: s.name, points: s.points, earnedMonth: s.earnedMonth, ledger: s.ledger, age: s.age, premiumUntil: s.premiumUntil, trialClaimed: s.trialClaimed, vouchers: s.vouchers,
+      credits: s.credits, cards: s.cards, payments: s.payments, refCode: s.refCode,
       scoreState: 'calibrating', streak: 0, bestStreak: 0, studyDates: [], userDays: 0, sessions: 0, flagged: [] });
     RS.step = 1; Q = null; ribbon('Target baru dimulai. Skormu mulai dari Lagi Kenalan.'); location.hash = '#/beranda'; render();
   },
@@ -591,6 +644,11 @@ const CHG = {
   'ob-date': (el) => { OB.date = el.value; },
   'share-consent': () => { const ok = $('#sh-c1').checked && (!$('#sh-c2') || $('#sh-c2').checked); $('#sh-go').disabled = !ok; },
 };
+Object.assign(ACT, AI.acts, KT.acts, EX.acts); // aksi dari modul fitur
+document.addEventListener('submit', (e) => {
+  const f = e.target.closest('[data-submit]');
+  if (f && AI.subs[f.dataset.submit]) { e.preventDefault(); AI.subs[f.dataset.submit](); }
+});
 function printPassport() {
   const s = S(), info = scoreInfo();
   const area = document.createElement('div'); area.id = 'print-area';

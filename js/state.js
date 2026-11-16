@@ -1,7 +1,7 @@
 // State aplikasi (disimpan di localStorage) dan nilai turunan.
-import { EXAM, BANDS, SQUAD_NAMES, SQUAD_DAYS, SQUAD_ACTIVE_MIN, SQUAD_STREAK, MONTH_CAP } from './data.js';
+import { TARGETS, TOPICS, BANDS, SQUAD_NAMES, SQUAD_DAYS, SQUAD_ACTIVE_MIN, SQUAD_STREAK, MONTH_CAP } from './data.js';
 
-const KEY = 'terang-score-v2';
+const KEY = 'terang-score-v3';
 
 export const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const today = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
@@ -15,9 +15,11 @@ export function fresh(over = {}) {
   const t = today();
   const dark = typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: dark)').matches;
   return {
-    onboarded: true, name: '', examDate: toISO(addDays(t, EXAM.days)),
+    onboarded: true, name: '', target: over.target || 'CPNS', examDate: toISO(addDays(t, TARGETS[over.target || 'CPNS'].days)),
     scoreState: 'terukur', theme: dark ? 'dark' : 'light', reduceMotion: false, age: '18+',
     premiumUntil: null, trialClaimed: false, vouchers: 0,
+    credits: 2000, cards: [], payments: [], notifSeen: [], interviews: 0, reviews: 0,
+    refCode: 'TERANG-' + Math.random().toString(36).slice(2, 6).toUpperCase(),
     reminderHour: 19, channel: 'inapp',
     doneDate: null, streak: 6, bestStreak: 9, restPasses: 2, restDates: [],
     studyDates: Array.from({ length: 6 }, (_, i) => toISO(addDays(t, -(6 - i)))),
@@ -51,7 +53,7 @@ function rollover() {
   if (daysBetween(last, today()) > 1) S.streak = 0;
 }
 
-export const cfg = () => EXAM;
+export const cfg = () => ({ ...TARGETS[S.target], topics: TOPICS });
 export const premiumLeft = () => (S.premiumUntil ? Math.max(0, daysBetween(today(), fromISO(S.premiumUntil))) : 0);
 export const examDate = () => fromISO(S.examDate);
 export const daysToExam = () => daysBetween(today(), examDate());
@@ -69,9 +71,9 @@ function rng(seedStr) {
 
 // 8 minggu terakhir per topik, deterministik per target. Data ilustrasi.
 export function weeklySeries() {
-  const c = cfg(); const t = today(); const n = 8;
-  const topics = c.topics.map(([name, end]) => {
-    const r = rng(EXAM.subtes + name);
+  const t = today(); const n = 8;
+  const topics = TOPICS.map(([name, end]) => {
+    const r = rng(TARGETS[S.target].subtes + name);
     const start = end - (14 + Math.round(r() * 12));
     const vals = Array.from({ length: n }, (_, i) => {
       const base = start + ((end - start) * i) / (n - 1);
