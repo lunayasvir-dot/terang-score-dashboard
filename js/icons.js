@@ -53,15 +53,21 @@ const FACE = {
   calm: '<path d="M33.500 52 Q39 58 44.500 52M55.500 52 Q61 58 66.500 52" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M44 62 Q50 66 56 62" stroke="#fff" stroke-width="2.600" fill="none" stroke-linecap="round"/>',
   proud: '<path d="M39 45 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z M61 45 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z" fill="#F5B82E"/><path d="M42 61 Q50 68 58 61" stroke="#fff" stroke-width="2.600" fill="none" stroke-linecap="round"/>',
 };
-export function mascot(mood = 'happy', size = 64) {
-  return `<svg class="mascot" viewBox="0 -8 100 108" width="${size}" height="${Math.round(size * 1.08)}" role="img" aria-label="Maskot Terang Score">
-    <line x1="50" y1="5" x2="50" y2="-2" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-    <circle cx="50" cy="-4" r="4.800" fill="#F5B82E"/>
-    <circle cx="50" cy="50" r="46" fill="var(--blue)"/>
-    <circle cx="50" cy="50" r="40" fill="none" stroke="#fff" stroke-width="4.500"/>
-    <rect x="23" y="37" width="54" height="33" rx="16.500" fill="#111418"/>
-    <path d="M31 42 Q37 39.500 44 40" stroke="#fff" stroke-opacity=".35" stroke-width="2.500" fill="none" stroke-linecap="round"/>
-    ${FACE[mood] || FACE.happy}</svg>`;
+// Animasi lewat CSS (styles.css › "Maskot animasi"): melayang, berkedip, antena goyang,
+// lompat saat senang/bangga, miring saat mikir. Mati otomatis kalau "kurangi gerakan" aktif.
+export function mascot(mood = 'happy', size = 64, extra = '') {
+  const m = FACE[mood] ? mood : 'happy';
+  return `<svg class="mascot mood-${m} ${extra}" viewBox="0 -8 100 108" width="${size}" height="${Math.round(size * 1.08)}" role="img" aria-label="Maskot Terang Score">
+    <ellipse class="m-shadow" cx="50" cy="99" rx="26" ry="3.500" fill="#111418" opacity=".12"/>
+    <g class="m-float">
+      <g class="m-ant"><line x1="50" y1="5" x2="50" y2="-2" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+      <circle class="m-star" cx="50" cy="-4" r="4.800" fill="#F5B82E"/></g>
+      <circle cx="50" cy="50" r="46" fill="var(--blue)"/>
+      <circle cx="50" cy="50" r="40" fill="none" stroke="#fff" stroke-width="4.500"/>
+      <rect x="23" y="37" width="54" height="33" rx="16.500" fill="#111418"/>
+      <path d="M31 42 Q37 39.500 44 40" stroke="#fff" stroke-opacity=".35" stroke-width="2.500" fill="none" stroke-linecap="round"/>
+      <g class="m-face">${FACE[m]}</g>
+    </g></svg>`;
 }
 
 // Maskot + gelembung ucapan.

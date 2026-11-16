@@ -14,6 +14,14 @@ python -m http.server 5173 --bind 127.0.0.1
 
 Lalu buka <http://localhost:5173>.
 
+## Alur pertama kali
+
+Saat pertama dibuka (belum ada data di browser), aplikasi menampilkan **landing page** (`#/mulai`). "Mulai gratis" membuka **onboarding** satu pertanyaan per layar: nama panggilan, tujuan (CPNS/UTBK/LPDP/belajar umum), status, usia, tanggal ujian, durasi belajar harian, jam belajar, dan sumber info. Setelah itu ada cek posisi 5 soal dan ringkasan rencana. "Lihat dashboard contoh" langsung masuk dengan data demo.
+
+## Gaya tampilan
+
+UI bergaya game yang ceria (benchmark rasa: aplikasi belajar seperti Duolingo, tanpa menyalin aset atau tata letaknya): tombol timbul, kartu tebal, font Nunito, **Jalur Belajar** di Beranda (unit per topik, 3 langkah + peti hadiah), kuis fokus layar penuh dengan lembar umpan balik dari bawah, combo jawaban benar, layar selesai dengan poin, akurasi, dan waktu. Maskot bergerak (melayang, berkedip, lompat, miring saat berpikir) dan bisa diketuk. Semua animasi mati kalau "kurangi gerakan" aktif di perangkat atau Profil.
+
 ## Isi
 
 | Menu | Yang ada |

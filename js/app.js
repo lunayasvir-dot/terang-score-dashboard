@@ -10,6 +10,7 @@ import * as CP from './copy.js';
 import * as AI from './ai.js';
 import * as KT from './kartu.js';
 import * as EX from './explore.js';
+import * as OBD from './onboard.js';
 
 const S = () => St.S;
 
@@ -73,7 +74,8 @@ function renderTopbar(route) {
   const unseen = CP.notifications().filter((n) => !S().notifSeen.includes(n.id)).length;
   $('#topbar').hidden = route === 'onboarding';
   $('#topbar').innerHTML = `<span class="crumb">Terang Score <span class="muted">›</span> <b>${esc(titleOf(route))}</b></span>
-    <div class="topbar-r"><button class="icon-btn bell" data-act="notif" aria-label="Notifikasi, ${unseen} belum dibaca">${icon('bell')}${unseen ? `<i class="badge-n">${unseen}</i>` : ''}</button>
+    <div class="topbar-r"><span class="tstats"><a class="tstat fire" href="#/beranda" title="Api Belajar" aria-label="Api Belajar ${S().streak} hari">${icon('flame', 20)} ${S().streak}</a>
+    <a class="tstat coin" href="#/poin" title="Poin" aria-label="${S().points} poin">${icon('coin', 20)} ${S().points.toLocaleString('id-ID')}</a></span><button class="icon-btn bell" data-act="notif" aria-label="Notifikasi, ${unseen} belum dibaca">${icon('bell')}${unseen ? `<i class="badge-n">${unseen}</i>` : ''}</button>
     <button class="icon-btn mob-only" data-act="theme-flip" aria-label="Ganti mode tampilan">${icon(dark ? 'sun' : 'moon')}</button></div>`;
 }
 function notifDialog() {
@@ -96,12 +98,37 @@ function gapRows() {
     const flagged = S().flagged.includes(r.name);
     const tag = flagged ? ` <span class="tag">Baru ditandai</span>` : '';
     if (calib) return `<div class="gap-row"><span class="gap-name">${esc(r.name)}${tag}</span>
-      <span class="muted small">masih dikenali</span><div class="bar" style="border-style:dashed"></div></div>`;
+      <span class="muted small">masih dikenali</span><div class="bar" style="opacity:.6"></div></div>`;
     const b = band(r.v);
     return `<div class="gap-row"><span class="gap-name">${esc(r.name)}${tag}</span>${bandPill(r.v)}
       <div class="bar ${b === 'close' ? 'gold' : b === 'needs' ? 'orange' : ''}" role="img" aria-label="${esc(r.name)} ${r.v} dari 100"><i style="width:${r.v}%"></i></div>
       ${i === 0 ? `<button class="btn small" data-act="train" data-topic="${esc(r.name)}" style="grid-column:1/-1;justify-self:start;margin-top:6px">${icon('zap', 16)} Asah topik ini</button>` : ''}</div>`;
   }).join('');
+}
+
+// Jalur belajar: tiap topik = 1 unit berisi 3 langkah latihan + 1 peti hadiah.
+const PATH_O = [0, 45, 70, 45, 0, -45, -70, -45];
+const PATH_ALL = { on: false };
+const NODE_KINDS = [['Pemanasan', 'star'], ['Latihan', 'zap'], ['Uji Kilat', 'trophy'], ['Peti Hadiah', 'gift2']];
+function pathHTML() {
+  const step = S().pathStep || 0; const topics = cfg().topics.map((t) => t[0]);
+  let g = 0; let out = '';
+  topics.forEach((tp, u) => {
+    const first = u * 4, last = u * 4 + 3;
+    const uc = step > last ? 'done' : step >= first ? '' : 'locked';
+    out += `<div class="unit ${uc}"><div><small>Unit ${u + 1} · ${uc === 'done' ? 'Tuntas' : uc === 'locked' ? 'Terkunci' : 'Lagi jalan'}</small><b>${esc(tp)}</b></div>${icon(uc === 'done' ? 'check' : uc === 'locked' ? 'lock' : 'book', 24)}</div>`;
+    if (uc === 'done' && !PATH_ALL.on) { g += 4; return; } // unit tuntas diringkas biar nggak kebanyakan scroll
+    NODE_KINDS.forEach(([label, ic], k) => {
+      const idx = first + k; const o = PATH_O[g++ % PATH_O.length];
+      const st = idx < step ? 'done' : idx === step ? 'current' : 'locked';
+      const chest = k === 3;
+      const bx = o === 0 ? 110 : -Math.sign(o) * 110;
+      const buddy = st === 'current' ? `<span class="path-buddy" style="left:calc(50% + ${bx}px)">${mascot(S().scoreState === 'calibrating' ? 'think' : 'happy', 56)}</span>` : '';
+      out += `<div class="node-wrap" style="--o:${o}">${st === 'current' ? `<span class="node-tip">${chest ? 'Buka!' : 'Mulai'}</span>` : ''}
+        <button class="node ${st}${chest ? ' chest' : ''}" data-act="node" data-i="${idx}" data-topic="${esc(tp)}" aria-label="${esc(tp)}: ${label}, ${st === 'done' ? 'selesai' : st === 'current' ? 'langkah sekarang' : 'terkunci'}">${icon(st === 'done' && !chest ? 'check' : ic, 30)}</button>${buddy}</div>`;
+    });
+  });
+  return out;
 }
 
 function viewHome() {
@@ -111,46 +138,51 @@ function viewHome() {
   const weak = info.weak.name;
   const mood = calib ? 'think' : risk ? 'cheer' : done ? 'proud' : 'happy';
   const msg = CP.mascotLine({ calib, risk, done, weak: esc(weak), streak: S().streak });
+  const hero = `<div class="home-hero"><button class="mascot-btn" data-act="poke" aria-label="Sapa maskot">${mascot(mood, 104)}</button>
+    <div><h1>${CP.greeting()}</h1><p class="small muted">Target ${esc(c.label)} (fokus ${c.subtes}) · ${longDate(examDate())} · ${dayText}</p>
+    <div class="bubble" id="hero-line">${msg}</div></div></div>`;
   const warn = d > 0 && d <= 14 ? `<div class="card warn"><p class="warn-title">${icon('alert')} Ujian ${esc(c.label)} tinggal ${d} hari</p>
       <p>Waktunya latihan penuh dan fokus ke topik yang paling lemah. Kamu nggak sendirian, squad nemenin kamu.</p></div>` : '';
   const report = d <= 0 && d >= -7 && st !== 'terkalibrasi' ? `<div class="card tint"><div class="card-head"><h2>Udah ujian? Ceritain hasilnya, yuk!</h2></div>
       <p class="muted">Hasil resmi bikin skormu makin akurat dan dapet poin. Bukti pendukung sifatnya opsional.</p>
       <div class="btn-row" style="margin-top:12px"><a class="btn" href="#/lapor-hasil">${icon('trophy')} Lapor hasil · +100 poin</a></div></div>` : '';
   const ringBadge = st === 'terkalibrasi' ? `<span class="pill gold badge-cal">${icon('check', 16)} Sudah Pas</span>` : '';
-  const ring = `<div class="card ring-card"><h2>Skor Siap-mu</h2>
+  const ring = `<div class="card ring-card ring-sm"><h2>Skor Siap-mu</h2>
       <button class="ring-btn" data-act="ring-detail" aria-label="${calib ? 'Buka rincian skor, saat ini masih Lagi Kenalan' : `Buka rincian skor, Skor Siap ${info.score}, status ${BAND_META[info.band].label}`}">
         ${ringSVG({ mode: calib ? 'calibrating' : 'score', score: info.score, band: info.band, badge: ringBadge })}</button>
-      <p class="ring-line">${calib ? 'Skor makin akurat seiring latihanmu.' : BAND_META[info.band].line}</p>
-      <p class="small muted">${calib ? 'Ketuk cincin buat lihat apa yang perlu diasah.' : st === 'terukur' ? 'Dihitung dari latihanmu.' : 'Sudah disesuaikan dengan hasil ujian nyata.'} Skor ini bukan jaminan lolos ujian.</p></div>`;
-  const daily = `<div class="card"><div class="card-head"><h2>Misi Harian</h2>${done ? `<span class="pill tint">${icon('check', 16)} Beres</span>` : ''}</div>
+      <p class="ring-line small">${calib ? 'Skor makin akurat seiring latihanmu.' : BAND_META[info.band].line}</p>
+      <p class="small muted">Skor ini bukan jaminan lolos ujian.</p></div>`;
+  const daily = `<div class="card"><div class="card-head"><h2>Misi Harian</h2>${done ? `<span class="pill tint">${icon('check', 16)} Beres</span>` : `<span class="pill tint">${S().dailyMin || 10} menit</span>`}</div>
       <div class="streak">${miniRing(done ? 1 : 0, done ? 'Misi harian selesai' : 'Misi harian belum dikerjakan', done ? '10/10' : '0/10')}
-      <div><p>${done ? 'Satu misi udah cukup buat jaga Api Belajarmu hari ini. Kerja bagus!' : `10 soal, sekitar 10 menit${calib ? '' : `, fokus ke <b>${esc(weak)}</b>`}.`}</p></div></div>
+      <p>${done ? 'Satu misi udah cukup buat jaga Api Belajarmu hari ini. Kerja bagus!' : `10 soal${calib ? '' : `, fokus ke <b>${esc(weak)}</b>`}.`}</p></div>
       <div class="btn-row" style="margin-top:14px">${done
         ? `<a class="btn" href="#/laporan">${icon('chart')} Lihat Rapor Mingguan</a>`
-        : `<a class="btn primary" href="#/daily${calib ? '' : `?topic=${encodeURIComponent(weak)}`}">${icon('zap')} Mulai Misi Harian</a>`}</div></div>`;
+        : `<a class="btn primary block" href="#/daily${calib ? '' : `?topic=${encodeURIComponent(weak)}`}">${icon('zap')} Mulai Misi Harian</a>`}</div></div>`;
   const streak = `<div class="card${risk ? ' warn' : ''}"><div class="streak"><div class="flame ${S().streak > 0 ? 'lit' : ''}" id="flame">${icon('flame', 30)}</div>
-      <div><div class="streak-num">${S().streak} <span class="small muted" style="font-weight:600">hari Api Belajar</span></div>
+      <div><div class="streak-num">${S().streak} <span class="small muted" style="font-weight:700">hari Api Belajar</span></div>
       <p class="small muted">Rekor ${Math.max(S().bestStreak, S().streak)} hari · Tiket Libur: ${S().restPasses}</p></div></div>
       ${weekDots()}
-      ${risk ? `<p class="warn-title" style="margin-top:12px">${icon('clock')} Jam belajarmu udah lewat nih</p><p class="small">Api Belajar ${S().streak} hari belum aman hari ini. Satu misi harian cukup, atau pakai Tiket Libur kalau lagi butuh istirahat.</p>
-      <div class="btn-row" style="margin-top:10px"><a class="btn small" href="#/daily">Kerjain misi harian</a>
+      ${risk ? `<p class="warn-title" style="margin-top:12px">${icon('clock')} Jam belajarmu udah lewat nih</p><p class="small">Api Belajar ${S().streak} hari belum aman hari ini. Satu misi cukup, atau pakai Tiket Libur kalau lagi butuh istirahat.</p>
+      <div class="btn-row" style="margin-top:10px"><a class="btn small" href="#/daily">Kerjain misi</a>
       <button class="btn small" data-act="rest-pass" ${S().restPasses < 1 ? 'disabled' : ''}>${icon('ticket', 16)} Pakai Tiket Libur</button></div>` : ''}</div>`;
   const pct = Math.round((sq.done / sq.total) * 100);
   const squadCard = `<div class="card"><div class="card-head"><h2>${esc(c.squad)}</h2><a class="btn link small" href="#/squad">Buka ${icon('chevron', 14)}</a></div>
-      <p class="muted small">Tujuan bareng minggu ini: semua anggota nyelesain misi harian 4 hari.</p>
+      <p class="muted small">Tujuan bareng: semua anggota nyelesain misi 4 hari minggu ini.</p>
       <div class="bar" style="margin:10px 0 6px" role="img" aria-label="${sq.done} dari ${sq.total} anggota sudah 4 hari"><i style="width:${pct}%"></i></div>
-      <p><b>${sq.done} dari ${sq.total}</b> anggota udah 4 hari · sisa ${sq.daysLeft} hari</p></div>`;
+      <p class="small"><b>${sq.done} dari ${sq.total}</b> anggota udah 4 hari · sisa ${sq.daysLeft} hari</p></div>`;
   const { overall } = weeklySeries();
   const delta = overall[7] - overall[6];
   const teaser = `<div class="card"><div class="card-head"><h2>Rapor Mingguan</h2><a class="btn link small" href="#/laporan">Buka ${icon('chevron', 14)}</a></div>
-      <p class="finding">${icon('chart')}<span>${calib ? 'Rapor mingguan muncul setelah dua minggu data latihan.'
-        : `Skor minggu ini ${delta >= 0 ? 'naik' : 'turun'} <b>${Math.abs(delta)} poin</b>. Paling jago: <b>${esc(info.strong.name)}</b>, paling perlu diasah: <b>${esc(info.weak.name)}</b>.`}</span></p></div>`;
-  return `<div class="page-head"><div><h1>${CP.greeting()}</h1>
-      <p>Target ${esc(c.label)} (fokus ${c.subtes}) · ${longDate(examDate())} (${dayText})</p></div></div>
-    <div class="stack"><div class="hero">${say(mood, msg)}</div>${quickLinks()}${warn}${report}
-    <div class="grid home-grid"><div class="stack">${ring}<div class="card"><div class="card-head"><h2>Radar Skill</h2><span class="pill tint">${icon('target', 16)} Topik ${c.subtes}</span></div>
-      <p class="small muted" style="margin-bottom:6px">Biar kamu tau topik mana yang udah jago dan mana yang perlu diasah.</p>${gapRows()}</div></div>
-    <div class="stack">${daily}${streak}${squadCard}${teaser}</div></div></div>`;
+      <p class="finding small">${icon('chart')}<span>${calib ? 'Rapor mingguan muncul setelah dua minggu data latihan.'
+        : `Skor minggu ini ${delta >= 0 ? 'naik' : 'turun'} <b>${Math.abs(delta)} poin</b>. Paling jago: <b>${esc(info.strong.name)}</b>.`}</span></p></div>`;
+  const total = cfg().topics.length * 4;
+  const path = `<div class="card path-card"><div class="card-head"><h2>Jalur Belajar ${c.subtes}</h2><span class="pill tint">${Math.min(S().pathStep || 0, total)}/${total} langkah</span></div>
+      <p class="small muted">Tiap langkah satu misi kecil. Selesaikan berurutan, lalu buka peti hadiah di ujung unit.</p>
+      ${(S().pathStep || 0) >= 4 ? `<button class="btn link small" data-act="path-all" style="padding:0">${PATH_ALL.on ? 'Ringkas unit yang tuntas' : 'Lihat langkah yang udah beres'}</button>` : ''}<div class="path">${pathHTML()}</div></div>`;
+  const radar = `<div class="card"><div class="card-head"><h2>Radar Skill</h2><span class="pill tint">${icon('target', 16)} ${c.subtes}</span></div>${gapRows()}</div>`;
+  return `<div class="stack">${hero}${quickLinks()}${warn}${report}
+    <div class="home-layout"><div class="stack">${path}</div>
+    <div class="side-col">${ring}${daily}${streak}${radar}${squadCard}${teaser}</div></div></div>`;
 }
 
 /* ------------------------------------------------------------------ RAPOR MINGGUAN */
@@ -207,41 +239,44 @@ function showTip(i) {
   $$('.pt', wrap).forEach((p) => p.classList.toggle('sel', +p.dataset.i === i));
 }
 
-/* ------------------------------------------------------------------ QUIZ (Misi Harian) */
+/* ------------------------------------------------------------------ QUIZ (Misi Harian, jalur, simulasi) */
 let Q = null;
-function startQuiz(focus, mode, cardId) {
+const OK_LINES = ['Mantap!', 'Tepat banget!', 'Keren, lanjut!', 'Nah, gitu!', 'Jago!'];
+function startQuiz(focus, mode, cardId, path) {
   let list = D.BANK.slice();
   if (focus) list = [...list.filter((q) => q.topic === focus), ...list.filter((q) => q.topic !== focus)];
   const card = cardId ? KT.cardById(cardId) : null;
-  Q = { list: list.slice(0, 10), i: 0, picked: null, wrong: [], right: 0, finished: false, focus, mode: mode === 'tryout' ? 'tryout' : 'daily', cardName: card ? card.name : '' };
+  Q = { list: list.slice(0, 10), i: 0, picked: null, wrong: [], right: 0, finished: false, focus, mode: mode === 'tryout' ? 'tryout' : 'daily',
+    cardName: card ? card.name : '', path: !!path, combo: 0, t0: Date.now() };
 }
 function viewDaily(params) {
-  if (!Q) startQuiz(params.get('topic'), params.get('mode'), params.get('card'));
+  if (!Q) startQuiz(params.get('topic'), params.get('mode'), params.get('card'), params.get('path'));
   if (Q.finished) return viewDailyDone();
-  const q = Q.list[Q.i];
-  const letters = ['A', 'B', 'C', 'D'];
+  const q = Q.list[Q.i]; const tryout = Q.mode === 'tryout';
+  const n = Q.i + (Q.picked != null ? 1 : 0);
   const opts = q.o.map((o, i) => {
     let cls = '';
     if (Q.picked != null) cls = i === q.a ? ' right' : i === Q.picked ? ' wrong' : '';
-    return `<button class="opt${cls}" data-act="pick" data-i="${i}" ${Q.picked != null ? 'disabled' : ''}><span class="key">${letters[i]}</span><span>${esc(o)}</span>
+    return `<button class="opt${cls}" data-act="pick" data-i="${i}" ${Q.picked != null ? 'disabled' : ''}><span class="key">${i + 1}</span><span>${esc(o)}</span>
       ${Q.picked != null && i === q.a ? `<span class="sr">Jawaban benar</span>${icon('check')}` : ''}</button>`;
   }).join('');
   const ok = Q.picked === q.a;
-  const fb = Q.picked == null ? '' : `<div class="feedback" role="status"><div class="say">${mascot(ok ? 'cheer' : 'think', 52)}<div><b>${ok ? 'Tepat banget!' : 'Belum pas, tapi nggak apa-apa.'}</b>
-      <p>${esc(q.e)}</p>${ok ? '' : `<p class="small muted" style="margin-top:6px">Topik <b>${esc(q.topic)}</b> masuk Radar Skill-mu buat diasah lagi.</p>`}</div></div>
-      <div class="btn-row" style="margin-top:12px"><button class="btn primary" data-act="next">${Q.i === 9 ? 'Selesai' : 'Soal berikutnya'}</button></div></div>`;
-  const tryout = Q.mode === 'tryout';
-  return `<div class="quiz"><div class="page-head"><div><h1>${tryout ? 'Simulasi Ujian' : 'Misi Harian'}</h1><p>${tryout ? esc(Q.cardName) + ' · versi contoh 10 soal' : Q.focus ? `Fokus: ${esc(Q.focus)}` : 'Satu misi kecil buat jaga Api Belajarmu'}</p></div>
-      <a class="btn small" href="${tryout ? '#/kartu?sub=saya' : '#/beranda'}">Keluar</a></div>
-    <div class="card"><div class="goal-top"><span class="muted small">Soal ${Q.i + 1} dari 10 · ${esc(q.topic)}</span></div>
-      <div class="bar" style="margin-bottom:16px" role="progressbar" aria-valuemin="0" aria-valuemax="10" aria-valuenow="${Q.i + (Q.picked != null ? 1 : 0)}"><i style="width:${(Q.i + (Q.picked != null ? 1 : 0)) * 10}%"></i></div>
-      <h2>${esc(q.q)}</h2>${opts}${fb}</div></div>`;
+  const sheet = Q.picked == null ? '' : `<div class="sheet ${ok ? 'ok' : 'no'}" role="status"><div class="sheet-in"><div class="sheet-msg">${mascot(ok ? 'cheer' : 'think', 60)}
+      <div><h3>${ok ? OK_LINES[Q.i % OK_LINES.length] : 'Belum pas, nggak apa-apa.'}</h3><p class="small">${ok ? '' : `Jawaban benar: <b>${esc(q.o[q.a])}</b>. `}${esc(q.e)}</p>
+      ${!ok && !tryout ? `<p class="small muted">${esc(q.topic)} masuk Radar Skill-mu buat diasah lagi.</p>` : ''}</div></div>
+      <button class="btn primary" data-act="next">${Q.i === 9 ? 'Selesai' : 'Lanjut'}</button></div></div>`;
+  const label = tryout ? `Simulasi · ${esc(Q.cardName)}` : Q.path ? `Jalur Belajar · ${esc(q.topic)}` : `Misi Harian · ${esc(q.topic)}`;
+  return `<div class="qz"><div class="qz-top"><a class="qz-x" href="${tryout ? '#/kartu?sub=saya' : '#/beranda'}" aria-label="Keluar">${icon('close', 22)}</a>
+      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="10" aria-valuenow="${n}"><i style="width:${Math.max(3, n * 10)}%"></i></div>
+      ${Q.combo >= 2 ? `<span class="qz-combo">${icon('flame', 18)} ${Q.combo}x</span>` : `<span class="small muted">${n}/10</span>`}</div>
+    <span class="qz-label">${label}</span><h1 class="qz-q">${esc(q.q)}</h1>${opts}<p class="qz-hint">Tips: tekan 1–4 buat jawab, Enter buat lanjut.</p></div>${sheet}`;
 }
 function finishDaily() {
-  Q.finished = true;
+  Q.finished = true; Q.secs = Math.round((Date.now() - Q.t0) / 1000);
   const s = S();
   if (Q.mode === 'tryout') { Q.firstToday = false; return; } // simulasi tidak mengubah Api Belajar dan poin
   s.flagged = [...new Set([...s.flagged, ...Q.wrong])].slice(-4);
+  if (Q.path) s.pathStep = (s.pathStep || 0) + 1;
   Q.firstToday = !isDone();
   if (Q.firstToday) {
     s.doneDate = toISO(today());
@@ -252,20 +287,33 @@ function finishDaily() {
     Q.got = addPoints(20, 'Misi harian selesai');
     if (s.scoreState === 'calibrating' && s.sessions >= 3) { s.scoreState = 'terukur'; ribbon('Skormu sekarang sudah Terukur!'); }
     checkSquadGoal();
+  } else if (Q.path) {
+    Q.got = addPoints(5, 'Langkah jalur belajar');
   }
   St.save();
 }
 function viewDailyDone() {
-  if (Q.mode === 'tryout') return `<div class="quiz"><div class="card done-ring">${mascot(Q.right >= 7 ? 'proud' : 'cheer', 110)}<h1>Simulasi selesai!</h1>
-      <p>${esc(Q.cardName)} · ${Q.right} benar dari 10</p><p class="small muted">Simulasi nggak mengubah Api Belajar dan poinmu. Santai aja, ini buat latihan.</p>
-      <div class="btn-row" style="justify-content:center"><a class="btn primary" href="#/kartu?sub=saya">Kembali ke Kartu Ujian</a></div></div></div>`;
-  return `<div class="quiz"><div class="card done-ring">${mascot(Q.right >= 7 ? 'proud' : 'cheer', 110)}
-      <div class="flame lit pop">${icon('flame', 30)}</div>
-      <h1>Misi harian beres!</h1>
-      <p>${Q.right} benar dari 10 · Api Belajar <b>${S().streak} hari</b>${Q.firstToday ? ` · +${Q.got} poin` : ''}</p>
-      ${Q.wrong.length ? `<p class="small muted">Topik yang ditandai di Radar Skill: ${[...new Set(Q.wrong)].map(esc).join(', ')}</p>` : '<p class="small muted">Semua jawabanmu tepat. Mantap!</p>'}
-      <div class="btn-row" style="justify-content:center"><button class="btn primary" data-act="share-squad">${icon('share')} Bagikan ke squad</button>
-      <a class="btn" href="#/beranda">Kembali ke Beranda</a></div></div></div>`;
+  const t = Q.secs || 0; const time = `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
+  const tiles = (pts) => `<div class="stat-tiles"><div class="st gold"><b>Poin</b><span>${icon('coin', 18)} +${pts}</span></div>
+    <div class="st blue"><b>Akurasi</b><span>${Q.right * 10}%</span></div><div class="st orange"><b>Waktu</b><span>${icon('clock', 18)} ${time}</span></div></div>`;
+  if (Q.mode === 'tryout') return `<div class="done-screen"><div class="done-confetti" id="done-confetti"></div><div style="display:grid;justify-items:center;gap:8px">
+      ${mascot(Q.right >= 7 ? 'proud' : 'cheer', 150)}<h1>Simulasi selesai!</h1><p class="muted">${esc(Q.cardName)}</p>${tiles(0)}
+      <p class="small muted">Simulasi nggak mengubah Api Belajar dan poinmu. Santai, ini buat latihan.</p>
+      <a class="btn primary xl" href="#/kartu?sub=saya">Kembali ke Kartu Ujian</a></div></div>`;
+  return `<div class="done-screen"><div class="done-confetti" id="done-confetti"></div><div style="display:grid;justify-items:center;gap:8px">
+      ${mascot(Q.right >= 7 ? 'proud' : 'cheer', 150)}<h1>${Q.path ? 'Langkah beres!' : 'Misi harian beres!'}</h1>
+      <p class="muted">${Q.firstToday ? `Api Belajar ${S().streak} hari. Besok lanjut lagi ya!` : 'Latihan tambahan tercatat. Mantap!'}</p>${tiles(Q.got || 0)}
+      ${Q.wrong.length ? `<p class="small muted">Masuk Radar Skill: ${[...new Set(Q.wrong)].map(esc).join(', ')}</p>` : '<p class="small muted">Semua jawabanmu tepat. Sempurna!</p>'}
+      <div class="btn-row" style="justify-content:center"><button class="btn" data-act="share-squad">${icon('share')} Bagikan ke squad</button><a class="btn primary xl" href="#/beranda">Lanjut</a></div></div></div>`;
+}
+function confettiIn(box) {
+  if (!box || S().reduceMotion || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const colors = ['var(--gold)', 'var(--blue)', 'var(--orange)'];
+  for (let i = 0; i < 36; i++) {
+    const c = document.createElement('span'); c.className = 'confetti';
+    c.style.left = `${Math.random() * 100}%`; c.style.background = colors[i % 3]; c.style.animationDelay = `${Math.random() * .8}s`;
+    box.appendChild(c); setTimeout(() => c.remove(), 3200);
+  }
 }
 
 /* ------------------------------------------------------------------ SQUAD */
@@ -428,35 +476,6 @@ function viewResult() {
     <div class="btn-row" style="margin-top:12px"><button class="btn" data-act="res-mentor" ${s.kating ? 'disabled' : ''}>${s.kating ? 'Sudah terdaftar' : 'Daftar jadi mentor'}</button><a class="btn" href="#/passport">Lihat Paspor Belajar</a></div></div></div>`;
 }
 
-/* ------------------------------------------------------------------ ONBOARDING */
-const OB = { step: 0, date: '', i: 0, picked: null, wrong: [], target: 'CPNS' };
-const obQuestions = () => D.DIAG_IDX.map((k) => D.BANK[k]);
-function viewOnboarding() {
-  if (OB.step === 0) {
-    if (!OB.date) OB.date = toISO(addDays(today(), D.TARGETS[OB.target].days));
-    return `<div class="quiz" style="margin:0 auto"><div class="page-head"><div><h1>Selamat datang di Terang Score!</h1><p>Belum perlu bikin akun. Kenalan dulu yuk.</p></div></div>
-      <div class="card"><div class="say" style="margin-bottom:16px">${mascot('cheer', 80)}<div class="bubble">Hai, aku maskot Terang! Aku bakal nemenin kamu belajar. Yuk kita mulai dari ngecek posisimu sekarang, cuma 5 soal.</div></div>
-      <div class="label" style="margin-bottom:8px">Target ujianmu</div><div class="chips" role="group" aria-label="Target ujian">${Object.entries(D.TARGETS).map(([k, v]) => `<button class="chip" data-act="ob-target" data-k="${k}" aria-pressed="${OB.target === k}">${v.short}</button>`).join('')}</div>
-      <p class="small muted" style="margin-top:6px">Mau belajar hal lain, bukan ujian? Nanti ada Eksplor Kategori Lain di Profil.</p>
-      <div class="field" style="margin-top:16px"><label for="ob-date">Tanggal ujian</label><input id="ob-date" type="date" value="${OB.date}" data-change="ob-date"></div>
-      <button class="btn primary" data-act="ob-start">Mulai cek posisi (5 menit)</button></div></div>`;
-  }
-  if (OB.step === 1) {
-    const qs = obQuestions(), q = qs[OB.i]; const L = ['A', 'B', 'C', 'D'];
-    return `<div class="quiz" style="margin:0 auto"><div class="page-head"><div><h1>Cek Posisi</h1><p>Soal ${OB.i + 1} dari ${qs.length}</p></div></div>
-      <div class="card"><div class="bar" style="margin-bottom:16px"><i style="width:${(OB.i + (OB.picked != null ? 1 : 0)) * 100 / qs.length}%"></i></div>
-      <h2>${esc(q.q)}</h2>${q.o.map((o, i) => {
-        const cls = OB.picked == null ? '' : i === q.a ? ' right' : i === OB.picked ? ' wrong' : '';
-        return `<button class="opt${cls}" data-act="ob-pick" data-i="${i}" ${OB.picked != null ? 'disabled' : ''}><span class="key">${L[i]}</span><span>${esc(o)}</span></button>`; }).join('')}
-      ${OB.picked != null ? `<div class="feedback"><p>${esc(q.e)}</p><div class="btn-row" style="margin-top:10px"><button class="btn primary" data-act="ob-next">${OB.i === qs.length - 1 ? 'Lihat hasil' : 'Berikutnya'}</button></div></div>` : ''}</div></div>`;
-  }
-  return `<div class="quiz" style="margin:0 auto"><div class="card ring-card">${mascot('think', 72)}${ringSVG({ mode: 'calibrating' })}
-    <h1>Hasil awalmu udah siap!</h1><p class="ring-line">Skor makin akurat seiring latihanmu. Angkanya belum kami tampilkan sampai datanya cukup bisa dipercaya.</p>
-    ${OB.wrong.length ? `<p class="small">Topik yang perlu diasah: <b>${[...new Set(OB.wrong)].map(esc).join(', ')}</b></p>` : '<p class="small">Mantap, belum ada kesenjangan besar yang kelihatan.</p>'}
-    <div class="field" style="width:100%;text-align:left"><label for="ob-name">Simpan progresmu: siapa namamu? (opsional)</label><input id="ob-name" type="text" maxlength="30" autocomplete="given-name"></div>
-    <button class="btn primary" data-act="ob-save">Simpan & lihat Beranda</button></div></div>`;
-}
-
 /* ------------------------------------------------------------------ PROFIL */
 function viewProfile(params) {
   const s = S(); const minor = s.age !== '18+'; const tab = params.get('tab') === 'eksplor' ? 'eksplor' : 'pengaturan';
@@ -491,20 +510,27 @@ function viewProfile(params) {
 /* ------------------------------------------------------------------ router & render */
 const VIEWS = {
   beranda: viewHome, laporan: viewReport, daily: viewDaily, 'lapor-hasil': viewResult, squad: viewSquad, poin: viewPoints, passport: viewPassport,
-  profil: viewProfile, onboarding: viewOnboarding, tanya: AI.viewTanya, interview: AI.viewInterview, review: AI.viewReview, ai: AI.viewAi, kartu: KT.viewKartu,
+  profil: viewProfile, onboarding: OBD.viewOnboarding, mulai: OBD.viewLanding, tanya: AI.viewTanya, interview: AI.viewInterview, review: AI.viewReview, ai: AI.viewAi, kartu: KT.viewKartu,
 };
-const TITLES = { laporan: 'Rapor Mingguan', daily: 'Misi Harian', 'lapor-hasil': 'Lapor Hasil', onboarding: 'Selamat Datang', ai: 'Artificial Intelligence', passport: 'Paspor Belajar' };
+const TITLES = { mulai: 'Belajar 10 Menit Sehari', laporan: 'Rapor Mingguan', daily: 'Misi Harian', 'lapor-hasil': 'Lapor Hasil', onboarding: 'Selamat Datang', ai: 'Artificial Intelligence', passport: 'Paspor Belajar' };
 let current = 'beranda';
+const BARE_PUBLIC = ['mulai', 'onboarding']; // boleh dibuka sebelum onboarding
+const BARE = ['mulai', 'onboarding', 'daily']; // layar fokus tanpa navigasi
 function render(keepScroll) {
   const [path, qs] = (location.hash.replace(/^#\//, '') || 'beranda').split('?');
   current = VIEWS[path] ? path : 'beranda';
-  if (!S().onboarded && current !== 'onboarding') { location.hash = '#/onboarding'; return; }
+  if (!S().onboarded && !BARE_PUBLIC.includes(current)) { location.hash = '#/mulai'; return; }
+  const bare = BARE.includes(current);
+  document.body.dataset.bare = bare ? '1' : '0';
   const main = $('#main'); const y = window.scrollY;
   main.innerHTML = VIEWS[current](new URLSearchParams(qs || ''));
   renderNav(current); renderTopbar(current);
+  $('#nav').hidden = bare; $('#topbar').hidden = bare;
   document.title = `Terang Score — ${titleOf(current)}`;
   requestAnimationFrame(() => {
-    $$('.ring-val').forEach((c) => { c.style.strokeDasharray = `${c.dataset.target} 100`; });
+    if (current !== 'mulai') $$('.ring-val').forEach((c) => { c.style.strokeDasharray = `${c.dataset.target} 100`; });
+    OBD.after(current);
+    if ($('#done-confetti') && !$('#done-confetti').dataset.done) { $('#done-confetti').dataset.done = '1'; confettiIn($('#done-confetti')); }
     if (current === 'squad') { tickRoom(); if (!SQ.timer) SQ.timer = setInterval(tickRoom, 1000); }
     AI.after();
   });
@@ -607,16 +633,6 @@ const ACT = {
   'demo-squad': () => { S().squadAllDone = true; St.save(); location.hash = '#/squad'; render(); if (checkSquadGoal()) { render(true); } setTimeout(celebrate, 150); },
   'demo-onboard': () => { St.S.onboarded = false; Object.assign(OB, { step: 0, date: '', i: 0, picked: null, wrong: [], target: 'CPNS' }); St.save(); location.hash = '#/onboarding'; render(); },
   'demo-reset': () => { resetFor({}); Q = null; applyTheme(); ribbon('Data demo direset'); location.hash = '#/beranda'; render(); },
-  'ob-target': (el) => { OB.target = el.dataset.k; OB.date = toISO(addDays(today(), D.TARGETS[OB.target].days)); render(true); },
-  'ob-start': () => { OB.step = 1; OB.i = 0; OB.picked = null; OB.wrong = []; render(); },
-  'ob-pick': (el) => { if (OB.picked != null) return; const q = obQuestions()[OB.i]; OB.picked = +el.dataset.i; if (OB.picked !== q.a) OB.wrong.push(q.topic); render(true); },
-  'ob-next': () => { if (OB.i === obQuestions().length - 1) OB.step = 2; else { OB.i++; OB.picked = null; } render(); },
-  'ob-save': () => {
-    const name = ($('#ob-name').value || '').trim();
-    resetFor({ target: OB.target, name, examDate: OB.date || toISO(addDays(today(), D.TARGETS[OB.target].days)), scoreState: 'calibrating', streak: 0, bestStreak: 0, studyDates: [], userDays: 0,
-      sessions: 0, points: 0, earnedMonth: 0, ledger: [], flagged: [...new Set(OB.wrong)], restPasses: 2 });
-    addPoints(10, 'Diagnostik selesai'); St.save(); Q = null; location.hash = '#/beranda'; render();
-  },
   'res-submit': () => {
     const a = parseFloat($('#r-act').value), m = parseFloat($('#r-max').value);
     if (!(a >= 0) || !(m > 0) || a > m) { $('#r-err').textContent = 'Isi skor resminya dulu ya (nggak boleh lebih dari skor maksimum) biar bisa disesuaikan.'; return; }
@@ -641,10 +657,32 @@ const CHG = {
   'set-hour': (el) => { S().reminderHour = +el.value; St.save(); },
   'set-channel': (el) => { S().channel = el.value; St.save(); },
   'set-motion': (el) => { S().reduceMotion = el.checked; St.save(); applyTheme(); },
-  'ob-date': (el) => { OB.date = el.value; },
   'share-consent': () => { const ok = $('#sh-c1').checked && (!$('#sh-c2') || $('#sh-c2').checked); $('#sh-go').disabled = !ok; },
 };
-Object.assign(ACT, AI.acts, KT.acts, EX.acts); // aksi dari modul fitur
+Object.assign(ACT, AI.acts, KT.acts, EX.acts, OBD.acts); // aksi dari modul fitur
+Object.assign(CHG, OBD.changes);
+ACT.poke = (el) => { OBD.acts.poke(el); const l = $('#hero-line'); if (l) l.innerHTML = CP.POKE[Math.floor(Math.random() * CP.POKE.length)]; };
+ACT.node = (el) => {
+  const i = +el.dataset.i; const step = S().pathStep || 0;
+  if (i > step) { el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); ribbon('Selesaikan langkah sebelumnya dulu ya'); return; }
+  Q = null;
+  if (i < step) { location.hash = `#/daily?topic=${encodeURIComponent(el.dataset.topic)}`; return; } // ulang latihan
+  if (i % 4 === 3) { S().pathStep = step + 1; const got = addPoints(15, 'Peti hadiah jalur belajar'); St.save(); ribbon(`Peti dibuka! +${got} poin`); render(true); return; }
+  location.hash = `#/daily?topic=${encodeURIComponent(el.dataset.topic)}&path=1`;
+};
+ACT['path-all'] = () => { PATH_ALL.on = !PATH_ALL.on; render(true); };
+ACT['demo-onboard'] =() => { St.S.onboarded = false; OBD.resetOnboarding(); St.save(); location.hash = '#/mulai'; render(); };
+document.addEventListener('keydown', (e) => {
+  if (e.target.matches && e.target.matches('input, textarea, select')) {
+    if (current === 'onboarding' && e.key === 'Enter' && e.target.id === 'ob-name') { e.preventDefault(); ACT['ob-next'](); }
+    return;
+  }
+  if (current === 'onboarding') return OBD.onKey(e);
+  if (current === 'daily' && Q && !Q.finished) {
+    if (/^[1-4]$/.test(e.key) && Q.picked == null) { const b = $(`[data-act="pick"][data-i="${+e.key - 1}"]`); if (b) b.click(); }
+    else if (e.key === 'Enter' && Q.picked != null) { e.preventDefault(); ACT.next(); }
+  }
+});
 document.addEventListener('submit', (e) => {
   const f = e.target.closest('[data-submit]');
   if (f && AI.subs[f.dataset.submit]) { e.preventDefault(); AI.subs[f.dataset.submit](); }

@@ -19,6 +19,7 @@ export function fresh(over = {}) {
     scoreState: 'terukur', theme: dark ? 'dark' : 'light', reduceMotion: false, age: '18+',
     premiumUntil: null, trialClaimed: false, vouchers: 0,
     credits: 2000, cards: [], payments: [], notifSeen: [], interviews: 0, reviews: 0,
+    pathStep: 9, dailyMin: 10, status: null, source: null, general: false,
     refCode: 'TERANG-' + Math.random().toString(36).slice(2, 6).toUpperCase(),
     reminderHour: 19, channel: 'inapp',
     doneDate: null, streak: 6, bestStreak: 9, restPasses: 2, restDates: [],
@@ -39,7 +40,8 @@ export let S = fresh();
 export function load() {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) S = { ...fresh(), ...JSON.parse(raw) };
+    // Pertama kali buka: belum ada data → tampilkan landing + onboarding.
+    S = raw ? { ...fresh(), ...JSON.parse(raw) } : fresh({ onboarded: false });
   } catch (e) { /* penyimpanan bisa diblokir; aplikasi tetap jalan tanpa persistensi */ }
   rollover();
 }

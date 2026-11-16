@@ -37,6 +37,15 @@ export function mascotLine({ calib, risk, done, weak, streak }) {
   ]);
 }
 
+// Kalau maskot di Beranda diketuk.
+export const POKE = [
+  'Hehe, geli! Yuk satu misi lagi.',
+  'Aku percaya kamu bisa, serius.',
+  'Udah cek Radar Skill-mu hari ini?',
+  'Sepuluh menit doang kok. Gas?',
+  'Minum air dulu, abis itu belajar ya.',
+];
+
 export function milestone(streak) {
   if (streak === 3) return 'Api Belajar 3 hari. Mulai kebiasaan nih!';
   if (streak === 7) return '7 hari berturut-turut! Api Belajarmu lagi on fire.';
