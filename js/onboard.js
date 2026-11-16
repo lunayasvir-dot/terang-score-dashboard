@@ -68,10 +68,11 @@ const QS = {
   status: { ask: () => 'Sekarang kamu lagi…', opts: [['sma', 'Pelajar SMA/SMK', 'book'], ['mhs', 'Mahasiswa', 'grad'], ['fresh', 'Fresh graduate', 'star'], ['kerja', 'Sudah bekerja', 'building']] },
   age: { ask: () => 'Biar fiturnya pas, usiamu berapa?', note: 'Fitur sosial dibuka bertahap sesuai usia, demi keamananmu.', opts: [['u16', 'Di bawah 16', 'user'], ['16-17', '16–17 tahun', 'user'], ['18+', '18 tahun ke atas', 'user']] },
   date: { ask: () => 'Kapan ujianmu?', type: 'date' },
-  daily: { ask: () => 'Mau belajar berapa lama sehari?', opts: [['5', '5 menit', 'zap', 'Santai'], ['10', '10 menit', 'zap', 'Reguler, paling pas'], ['15', '15 menit', 'flame', 'Serius'], ['20', '20 menit', 'flame', 'Ngebut']] },
+  daily: { ask: () => 'Berapa lama kamu mau belajar setiap hari?', note: 'Pilih yang realistis. Konsisten tiap hari lebih ampuh daripada sekali belajar lama.', opts: [['15', '15 menit', 'clock', 'Santai, pas di sela-sela kegiatan'], ['30', '30 menit', 'clock', 'Rutin, ritme yang paling seimbang'], ['45', '45 menit', 'flame', 'Serius, buat target yang makin dekat'], ['60', 'Lebih dari 1 jam', 'flame', 'Intensif, mode persiapan penuh']] },
   time: { ask: () => 'Biasanya kamu sempat belajar jam berapa?', note: 'Kami ingetin di jam ini. Bisa diubah kapan aja di Profil.', opts: [['6', 'Pagi', 'sun', 'sekitar 06.00'], ['12', 'Siang', 'sun', 'sekitar 12.00'], ['16', 'Sore', 'sun', 'sekitar 16.00'], ['19', 'Malam', 'moon', 'sekitar 19.00'], ['21', 'Larut', 'moon', 'sekitar 21.00']] },
   source: { ask: () => 'Terakhir nih, dari mana kamu tau Terang AI?', optional: true, opts: [['tiktok', 'TikTok', 'video'], ['ig', 'Instagram', 'heart'], ['teman', 'Dari teman', 'users'], ['kampus', 'Sekolah atau kampus', 'grad'], ['lain', 'Lainnya', 'sparkle']] },
 };
+export const durLabel = (m) => (m >= 60 ? 'Lebih dari 1 jam' : `${m} menit`);
 const OB = { i: 0, a: {}, d: {} };
 export function resetOnboarding(goal) {
   OB.i = 0;
@@ -127,7 +128,7 @@ export function viewOnboarding() {
   const rows = [
     ['Target', target ? TARGETS[target].label : 'Belajar umum'],
     ...(date ? [['Ujian', `${longDate(date)}${a.dateUnknown || !a.date ? ' (perkiraan)' : ''}`]] : []),
-    ['Latihan harian', `${a.daily || 10} menit`],
+    ['Belajar harian', durLabel(+(a.daily || 30))],
     ['Pengingat', `jam ${String(a.time || 19).padStart(2, '0')}.00`],
   ];
   return `<div class="ob"><div class="ob-body" style="display:grid;justify-items:center;text-align:center;gap:12px">
@@ -144,7 +145,7 @@ function finish() {
   St.replaceState(St.fresh({
     theme: old.theme, reduceMotion: old.reduceMotion, onboarded: true, name: (a.name || '').trim().slice(0, 30), target,
     examDate: a.date && !a.dateUnknown ? a.date : toISO(addDays(today(), TARGETS[target].days)),
-    age: a.age || '18+', reminderHour: +(a.time || 19), dailyMin: +(a.daily || 10), status: a.status, source: a.source, general: a.goal === 'UMUM',
+    age: a.age || '18+', reminderHour: +(a.time || 19), dailyMin: +(a.daily || 30), status: a.status, source: a.source, general: a.goal === 'UMUM',
     scoreState: 'calibrating', streak: 0, bestStreak: 0, studyDates: [], userDays: 0, sessions: 0, points: 0, earnedMonth: 0, ledger: [],
     flagged: [...new Set(OB.d.wrong)], pathStep: 0,
   }));

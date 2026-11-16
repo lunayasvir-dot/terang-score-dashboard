@@ -5,7 +5,7 @@ import { icon, mascot, say } from './icons.js';
 import * as St from './state.js';
 import { esc, today, addDays, toISO, fromISO, longDate, cfg, examDate, daysToExam, isDone,
   streakAtRisk, band, weeklySeries, scoreInfo, squad, addPoints, premiumLeft } from './state.js';
-import { $, $$, rp, initial, ribbon, openDlg, closeDlg, hooks } from './ui.js';
+import { $, $$, rp, initial, ribbon, openDlg, closeDlg, hooks, lockChip } from './ui.js';
 import * as CP from './copy.js';
 import * as AI from './ai.js';
 import * as KT from './kartu.js';
@@ -152,7 +152,7 @@ function viewHome() {
         ${ringSVG({ mode: calib ? 'calibrating' : 'score', score: info.score, band: info.band, badge: ringBadge })}</button>
       <p class="ring-line small">${calib ? 'Skor makin akurat seiring latihanmu.' : BAND_META[info.band].line}</p>
       <p class="small muted">Skor ini bukan jaminan lolos ujian.</p></div>`;
-  const daily = `<div class="card"><div class="card-head"><h2>Misi Harian</h2>${done ? `<span class="pill tint">${icon('check', 16)} Beres</span>` : `<span class="pill tint">${S().dailyMin || 10} menit</span>`}</div>
+  const daily = `<div class="card"><div class="card-head"><h2>Misi Harian</h2>${done ? `<span class="pill tint">${icon('check', 16)} Beres</span>` : `<span class="pill tint">${icon('clock', 14)} ${OBD.durLabel(S().dailyMin || 30)}/hari</span>`}</div>
       <div class="streak">${miniRing(done ? 1 : 0, done ? 'Misi harian selesai' : 'Misi harian belum dikerjakan', done ? '10/10' : '0/10')}
       <p>${done ? 'Satu misi udah cukup buat jaga Api Belajarmu hari ini. Kerja bagus!' : `10 soal${calib ? '' : `, fokus ke <b>${esc(weak)}</b>`}.`}</p></div>
       <div class="btn-row" style="margin-top:14px">${done
@@ -362,7 +362,21 @@ function viewSquad() {
         <p class="muted small">Timer bareng 25 menit. Yang lagi belajar muncul sebagai avatar, tanpa chat, suara, atau video. Tinggal fokus bareng.</p>
         <div class="avatars" aria-label="Lagi belajar">${present.map((n) => `<span class="avatar" title="${esc(n)}">${initial(n)}</span>`).join('')}${joined ? `<span class="avatar" style="background:var(--blue);color:var(--on-blue)" title="Kamu">${initial(S().name || 'K')}</span>` : ''}</div>
         <button class="btn ${joined ? '' : 'small'}" data-act="room-toggle">${joined ? 'Keluar ruangan' : 'Masuk ruangan'}</button></div>
-      <div class="card"><h2 style="margin-bottom:8px">Teman Belajar-mu</h2><p class="finding">${icon('heart')}<span><b>Bella</b> ${S().squadAllDone ? 'udah selesai hari ini.' : 'udah nyelesain 3 dari 4 hari.'} Kalian saling ngingetin, bukan saingan.</span></p></div></div></div></div>`;
+      ${voiceCard()}<div class="card"><h2 style="margin-bottom:8px">Teman Belajar-mu</h2><p class="finding">${icon('heart')}<span><b>Bella</b> ${S().squadAllDone ? 'udah selesai hari ini.' : 'udah nyelesain 3 dari 4 hari.'} Kalian saling ngingetin, bukan saingan.</span></p></div></div></div></div>`;
+}
+// Voice channel squad ala server komunitas (Premium, khusus 18+). Prototipe: tanpa audio sungguhan.
+const VC = { on: null, mute: false };
+const CHANNELS = [['ruang-fokus', 'Fokus bareng, mic nyala seperlunya', 6], ['bahas-soal', 'Diskusi soal yang bikin mentok', 3], ['pomodoro-malam', '25 menit fokus, 5 menit ngobrol', 9]];
+function voiceCard() {
+  const prem = EX.isPremium(); const adult = S().age === '18+'; const open = prem && adult;
+  const list = CHANNELS.map(([n, d, k]) => `<button class="vc-ch${VC.on === n ? ' on' : ''}" data-act="vc-join" data-n="${n}" ${open ? '' : 'disabled'}>${icon('headset', 18)}<span class="vc-t"><b># ${n}</b><small>${d}</small></span><span class="vc-n">${icon('users', 14)} ${k + (VC.on === n ? 1 : 0)}</span></button>`).join('');
+  const live = VC.on ? `<div class="vc-live"><p>${icon('wave', 18)} Tersambung ke <b>#${VC.on}</b> · mic ${VC.mute ? 'mati' : 'nyala'}</p><p class="small muted">Demo prototipe, belum ada suara sungguhan.</p>
+    <div class="btn-row"><button class="btn small" data-act="vc-mute">${VC.mute ? 'Nyalakan mic' : 'Matikan mic'}</button><button class="btn small" data-act="vc-leave">Keluar channel</button></div></div>` : '';
+  const foot = !prem ? `<button class="btn lock-btn block" data-act="feat-open" data-id="voice">${icon('lock', 16)} Unlock dengan Premium</button>`
+    : !adult ? '<p class="small muted">Voice channel khusus pengguna 18 tahun ke atas.</p>' : '';
+  return `<div class="card vc${open ? '' : ' vc-locked'}"><div class="card-head"><h2>${icon('headset')} Voice Channel Squad</h2>${prem ? '<span class="pill gold">Premium</span>' : lockChip()}</div>
+    <p class="small muted">Belajar bareng sambil ngobrol pakai suara, kayak server komunitas. Dimoderasi dan khusus 18+.</p>
+    <div class="vc-list">${list}</div>${live}${foot}</div>`;
 }
 function tickRoom() {
   const el = $('#room-timer'); if (!el) { clearInterval(SQ.timer); SQ.timer = null; return; }
@@ -670,6 +684,9 @@ ACT.node = (el) => {
   if (i % 4 === 3) { S().pathStep = step + 1; const got = addPoints(15, 'Peti hadiah jalur belajar'); St.save(); ribbon(`Peti dibuka! +${got} poin`); render(true); return; }
   location.hash = `#/daily?topic=${encodeURIComponent(el.dataset.topic)}&path=1`;
 };
+ACT['vc-join'] = (el) => { VC.on = el.dataset.n; VC.mute = false; ribbon(`Masuk #${VC.on}. Selamat belajar bareng!`); render(true); };
+ACT['vc-mute'] = () => { VC.mute = !VC.mute; render(true); };
+ACT['vc-leave'] = () => { VC.on = null; render(true); };
 ACT['path-all'] = () => { PATH_ALL.on = !PATH_ALL.on; render(true); };
 ACT['demo-onboard'] =() => { St.S.onboarded = false; OBD.resetOnboarding(); St.save(); location.hash = '#/mulai'; render(); };
 document.addEventListener('keydown', (e) => {
