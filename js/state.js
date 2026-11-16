@@ -1,7 +1,7 @@
 // State aplikasi (disimpan di localStorage) dan nilai turunan.
-import { TARGETS, BANDS, SQUAD_NAMES, SQUAD_DAYS, SQUAD_ACTIVE_MIN, SQUAD_STREAK, MONTH_CAP } from './data.js';
+import { EXAM, BANDS, SQUAD_NAMES, SQUAD_DAYS, SQUAD_ACTIVE_MIN, SQUAD_STREAK, MONTH_CAP } from './data.js';
 
-const KEY = 'terang-score-v1';
+const KEY = 'terang-score-v2';
 
 export const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const today = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
@@ -13,18 +13,19 @@ export const longDate = (d) => d.toLocaleDateString('id-ID', { weekday: 'long', 
 
 export function fresh(over = {}) {
   const t = today();
-  const target = over.target || 'UTBK';
+  const dark = typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: dark)').matches;
   return {
-    onboarded: true, name: '', target, examDate: toISO(addDays(t, TARGETS[target].days)),
-    scoreState: 'terukur', palette: 'klasik', reduceMotion: false, age: '18+',
+    onboarded: true, name: '', examDate: toISO(addDays(t, EXAM.days)),
+    scoreState: 'terukur', theme: dark ? 'dark' : 'light', reduceMotion: false, age: '18+',
+    premiumUntil: null, trialClaimed: false, vouchers: 0,
     reminderHour: 19, channel: 'inapp',
     doneDate: null, streak: 6, bestStreak: 9, restPasses: 2, restDates: [],
     studyDates: Array.from({ length: 6 }, (_, i) => toISO(addDays(t, -(6 - i)))),
     sessions: 24, flagged: [], userDays: 2, squadAllDone: false, celebrated: false,
     points: 1240, earnedMonth: 340, ledger: [
-      { t: 'Daily 10 selesai', p: 20, d: toISO(addDays(t, -1)) },
+      { t: 'Misi harian selesai', p: 20, d: toISO(addDays(t, -1)) },
       { t: 'Skor mingguan naik', p: 30, d: toISO(addDays(t, -4)) },
-      { t: 'Tukar: 1 hari Premium', p: -300, d: toISO(addDays(t, -9)) },
+      { t: 'Tukar: Slot Ruang Belajar Hening', p: -150, d: toISO(addDays(t, -9)) },
     ],
     shares: [], result: null, resultRewarded: false, kating: false, forceRisk: false, room: false,
     ...over,
@@ -50,7 +51,8 @@ function rollover() {
   if (daysBetween(last, today()) > 1) S.streak = 0;
 }
 
-export const cfg = () => TARGETS[S.target];
+export const cfg = () => EXAM;
+export const premiumLeft = () => (S.premiumUntil ? Math.max(0, daysBetween(today(), fromISO(S.premiumUntil))) : 0);
 export const examDate = () => fromISO(S.examDate);
 export const daysToExam = () => daysBetween(today(), examDate());
 export const isDone = () => S.doneDate === toISO(today());
@@ -69,7 +71,7 @@ function rng(seedStr) {
 export function weeklySeries() {
   const c = cfg(); const t = today(); const n = 8;
   const topics = c.topics.map(([name, end]) => {
-    const r = rng(S.target + name);
+    const r = rng(EXAM.subtes + name);
     const start = end - (14 + Math.round(r() * 12));
     const vals = Array.from({ length: n }, (_, i) => {
       const base = start + ((end - start) * i) / (n - 1);

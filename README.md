@@ -2,7 +2,8 @@
 
 Prototipe dashboard **Terang Score** (Terang AI) berdasarkan dokumen *Product Requirement & UI Guideline* dan *Activation & Retention Solution (#SquadTerang)*.
 
-Siklusnya: ukur kesiapan → susun rencana → berlatih bersama squad → buktikan hasilnya.
+Siklusnya: kenali posisimu → susun rencana → belajar bareng squad → buktikan hasilnya.
+Contoh ujian: **SKD CPNS, subtes TIU**.
 
 ## Menjalankan di localhost
 
@@ -18,28 +19,31 @@ Lalu buka <http://localhost:5173>.
 
 | Menu | Yang ada |
 |---|---|
-| **Score & Plan** (Beranda) | Readiness Score (ring 3/4; Calibrating / Terukur / Terkalibrasi; pita On track, Close, Needs work), Peta Kesenjangan, kartu Daily 10, Streak + Rest Day Pass, peringatan tenggat, lapor hasil ujian |
-| Weekly Score Report | Grafik garis interaktif, filter topik, penanda terkuat/terlemah, garis tanggal ujian, tabel alternatif |
-| Daily 10 / Diagnostik | Kuis 10 soal dengan umpan balik langsung; onboarding diagnostik 5 soal tanpa akun |
-| **#SquadTerang** | Papan tujuan bersama (tanpa peringkat, tanpa skor), filter dan urutan, kartu anggota, kirim semangat, Silent Study Room dengan timer bersama |
-| **Points & Playbooks** | Saldo, batas poin bulanan, katalog hadiah, Playbooks alumni |
-| **Terang Passport** | Ringkasan, riwayat lintas platform, bagikan dengan persetujuan eksplisit, cabut akses |
-| Profil | Usia (tingkat fitur sosial), pengingat, kurangi gerakan, 5 pilihan palet, **panel demo** |
+| **Beranda** | Skor Siap (ring 3/4; Lagi Kenalan / Terukur / Sudah Pas; pita Di Jalur, Dikit Lagi, Perlu Diasah), **Radar Skill** (peta kesenjangan topik TIU), Misi Harian, Api Belajar + Tiket Libur, peringatan tenggat, lapor hasil ujian |
+| Rapor Mingguan | Grafik garis interaktif, filter topik, penanda topik terjago/terlemah, garis tanggal ujian, tabel alternatif |
+| Misi Harian / Cek Posisi | Kuis 10 soal TIU dengan umpan balik langsung; onboarding 5 soal tanpa akun |
+| **#SquadTerang** | Papan tujuan bareng (tanpa peringkat, tanpa skor), kartu anggota, kirim semangat, Ruang Belajar Hening dengan timer bareng, Teman Belajar |
+| **Poin & Jurus** | Saldo & batas poin bulanan, katalog hadiah (Coba Gratis Premium 7 hari, Premium 1/3 hari, voucher), **paket Premium 1/3/6 bulan**, Jurus Alumni |
+| **Paspor** | Ringkasan, riwayat lintas platform, bagikan dengan persetujuan eksplisit, cabut akses |
+| Profil | Mode terang/gelap, kurangi gerakan, pengingat, mode usia, **Panel Demo** |
+
+Maskot ada di brand, sapaan Beranda, umpan balik soal, dan layar selesai. Semuanya lewat fungsi `mascot()` di `js/icons.js`; tinggal diganti kalau aset maskot resmi sudah ada.
 
 ## Prinsip dari brief yang diterapkan
 
-- Skor jujur: pengguna baru melihat "Calibrating", bukan angka. Tidak ada klaim probabilitas lulus.
+- Skor jujur: pengguna baru melihat "Lagi Kenalan", bukan angka. Tidak ada klaim probabilitas lulus.
 - Tidak ada warna merah untuk kegagalan; "belum siap" memakai oranye. Warna selalu disertai ikon dan kata.
 - Satu CTA Light Blue penuh per layar; teks di atasnya Solid Black.
-- Cincin dan garis di atas putih memakai Blue Strong (kontras ≥ 3:1).
+- Cincin dan garis di atas putih memakai Blue Strong (kontras ≥ 3:1). Mode gelap memakai token "Fokus Malam".
 - Animasi mengikuti "kurangi gerakan" (OS maupun toggle di Profil).
 
 ## Catatan penting
 
-- **Semua angka adalah data ilustrasi**, bukan data pengguna. Skor mingguan dibangkitkan deterministik per target ujian.
-- Ambang pita status (On track ≥ 75, Close ≥ 60) dan ambang Calibrating → Terukur (3 Daily 10) adalah nilai **sementara**; keduanya pertanyaan terbuka untuk tim data.
+- **Semua angka adalah data ilustrasi**, bukan data pengguna. Skor mingguan dibangkitkan deterministik.
+- Ambang pita status (Di Jalur ≥ 75, Dikit Lagi ≥ 60) dan ambang Lagi Kenalan → Terukur (3 misi harian) adalah nilai **sementara**; keduanya pertanyaan terbuka untuk tim data.
+- **Harga paket Premium (Rp59.000 / Rp149.000 / Rp269.000) hanya contoh**, belum ditetapkan tim produk. Pembayaran belum tersambung.
 - Kode warna adalah token usulan; perlu dicocokkan dengan brand kit resmi. Keluarga huruf belum ditetapkan, dipakai font sistem.
-- Konten Playbooks, hadiah mitra, dan tautan Passport (`terang.example`) hanya contoh.
+- Konten Jurus Alumni, hadiah mitra, dan tautan Paspor (`terang.example`) hanya contoh.
 - State disimpan di `localStorage` browser. Gunakan *Reset data demo* di Profil untuk mengulang.
 
 ## Struktur
@@ -47,9 +51,9 @@ Lalu buka <http://localhost:5173>.
 ```
 index.html
 css/styles.css      token warna + komponen
-js/data.js          konfigurasi target, bank soal, data squad
+js/data.js          ujian contoh, bank soal TIU, katalog & paket, data squad
 js/state.js         state, persistensi, nilai turunan
-js/charts.js        ring Readiness Score, grafik garis
-js/icons.js         ikon SVG
+js/charts.js        ring Skor Siap, grafik garis
+js/icons.js         ikon SVG + maskot
 js/app.js           tampilan, router, aksi
 ```

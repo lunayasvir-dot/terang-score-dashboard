@@ -2,9 +2,9 @@
 import { icon } from './icons.js';
 
 export const BAND_META = {
-  on:    { label: 'On track',   color: 'var(--blue-strong)', icon: 'check', line: 'Kamu sudah di jalur yang tepat. Jaga ritmenya.' },
-  close: { label: 'Close',      color: 'var(--gold)',        icon: 'half',  line: 'Sedikit lagi menuju target. Fokus ke topik terlemah.' },
-  needs: { label: 'Needs work', color: 'var(--orange)',      icon: 'alert', line: 'Masih perlu dikerjakan. Mulai dari satu topik hari ini.' },
+  on:    { label: 'Di Jalur',     color: 'var(--blue-strong)', icon: 'check', line: 'Kamu udah di jalur yang tepat. Pertahankan ritmenya!' },
+  close: { label: 'Dikit Lagi',   color: 'var(--gold)',        icon: 'half',  line: 'Dikit lagi nyampe target. Asah topik yang paling lemah yuk.' },
+  needs: { label: 'Perlu Diasah', color: 'var(--orange)',      icon: 'alert', line: 'Masih ada yang bisa diasah. Mulai dari satu topik hari ini.' },
 };
 
 const R = 80;
@@ -14,22 +14,22 @@ export function ringSVG({ mode, score = 0, band = 'close', big = true, badge = '
   const meta = BAND_META[band];
   const size = big ? 220 : 120;
   const alt = calib
-    ? 'Readiness Score sedang Calibrating, belum ada angka'
-    : `Readiness Score ${score}, status ${meta.label}`;
+    ? 'Skor Siap masih Lagi Kenalan, angkanya belum ditampilkan'
+    : `Skor Siap ${score}, status ${meta.label}`;
   const track = calib
     ? `<path class="ring-track calib" d="M43.43 156.57 A80 80 0 1 1 156.57 156.57" pathLength="100" fill="none" stroke-width="6" stroke-dasharray="2.2 1.8" stroke-linecap="butt"/>`
     : `<circle class="ring-track" cx="100" cy="100" r="${R}" pathLength="100" transform="rotate(135 100 100)" stroke-dasharray="75 100" fill="none" stroke-width="16" stroke-linecap="round"/>`;
   const val = calib ? '' : `<circle class="ring-val" cx="100" cy="100" r="${R}" pathLength="100" transform="rotate(135 100 100)"
       stroke-dasharray="0 100" data-target="${(score * 0.75).toFixed(2)}" fill="none" stroke="${meta.color}" stroke-width="16" stroke-linecap="round"/>`;
   const center = calib
-    ? `<text x="100" y="98" text-anchor="middle" class="ring-word">Calibrating</text>
-       <text x="100" y="122" text-anchor="middle" class="ring-sub">skor belum ditampilkan</text>`
+    ? `<text x="100" y="98" text-anchor="middle" class="ring-word">Lagi Kenalan</text>
+       <text x="100" y="122" text-anchor="middle" class="ring-sub">angkanya nyusul ya</text>`
     : `<text x="100" y="112" text-anchor="middle" class="ring-num">${score}</text>
        <text x="100" y="132" text-anchor="middle" class="ring-sub">dari 100</text>`;
   return `<svg class="ring" viewBox="0 0 200 200" width="${size}" height="${size}" role="img" aria-label="${alt}">
     ${track}${val}${center}</svg>
     <div class="ring-status">${calib
-      ? `<span class="pill neutral">${icon('dots')} Calibrating</span>`
+      ? `<span class="pill neutral">${icon('dots')} Lagi Kenalan</span>`
       : `<span class="pill band-${band}">${icon(meta.icon)} ${meta.label}</span>${badge}`}</div>`;
 }
 
@@ -78,7 +78,7 @@ export function lineChart({ data, slots, examSlot, examLabel, calibrating, marks
     return `${shape}<text x="${tx}" y="${ty}" text-anchor="${anchor}" class="mk-label ${up ? 'strong' : 'weak'}">${up ? '▲ Terkuat' : '▼ Terlemah'}: ${m.label}</text>`;
   }).join('');
   return `<svg class="line-chart" viewBox="0 0 ${W} ${H}" role="img"
-    aria-label="Grafik garis skor mingguan. Tabel data tersedia sebagai alternatif.">
+    aria-label="Grafik garis skor per minggu. Tabel data tersedia sebagai alternatif.">
     ${grid}${exam}
     <path d="${path}" fill="none" class="series${calibrating ? ' calib' : ''}" stroke="${calibrating ? 'var(--calib)' : color}"/>
     ${xl}${mk}${pts}</svg>`;
