@@ -6,6 +6,7 @@ import { esc, today, addDays, toISO, fromISO, longDate } from './state.js';
 import { TARGETS, BANK, DIAG_IDX } from './data.js';
 import { ringSVG } from './charts.js';
 import { $, $$, hooks } from './ui.js';
+import * as DEMO from './demo.js';
 
 /* ------------------------------------------------------------------ LANDING */
 export function viewLanding() {
@@ -22,7 +23,8 @@ export function viewLanding() {
     <section class="l-wrap l-hero">
       <div><h1>Sepuluh soal sehari, sampai namamu ada di <span class="hl">pengumuman</span>.</h1>
         <p class="l-sub">Latihan CPNS, UTBK, dan LPDP yang tahu posisimu, nemenin tiap hari, dan bikin kamu belajar bareng squad. Gratis buat mulai.</p>
-        <div class="l-cta"><button class="btn primary xl" data-act="land-start">Mulai gratis</button><button class="btn xl" data-act="land-demo">Lihat dashboard contoh</button></div>
+        <div class="l-cta"><button class="btn primary xl" data-act="land-start">Mulai gratis</button><button class="btn xl" data-act="land-watch">&#9654; Tonton demo</button></div>
+        <button class="btn link small" data-act="land-demo" style="padding:0;margin-top:12px">atau lihat dashboard contoh &rarr;</button>
         <div class="l-proof"><span class="avs">${proof}</span> Digunakan oleh 10K+ pembelajar Indonesia</div></div>
       <div class="l-stage" aria-hidden="true"><div class="l-blob"></div><div class="l-blob b2"></div>
         <button class="mascot-btn" data-act="poke" tabindex="-1">${mascot('cheer', 260)}</button>
@@ -32,6 +34,7 @@ export function viewLanding() {
         <span class="float f4">${icon('check', 18)} Misi Harian beres!</span></div>
     </section>
     <div class="l-strip"><div class="l-wrap"><span>Siap buat</span><b>${icon('building', 20)} CPNS</b><b>${icon('book', 20)} UTBK-SNBT</b><b>${icon('grad', 20)} LPDP</b><span>dan belajar harian lainnya</span></div></div>
+    ${DEMO.demoSection()}${DEMO.featureGrid()}
 
     <section class="l-wrap l-sec"><div class="l-copy"><div class="l-num">01</div><span class="l-kicker">Kenali posisimu</span><h2>Lima menit, langsung tau posisimu.</h2>
       <p>Cek posisi singkat bikin Skor Siap-mu mulai kebentuk. Selama datanya belum cukup, kami bilang jujur: skornya masih "Lagi Kenalan". Nggak ada janji palsu soal peluang lolos.</p></div>
@@ -154,6 +157,9 @@ function finish() {
 }
 
 export const acts = {
+  ...DEMO.acts,
+  'land-go': (el) => { St.S.onboarded = true; St.save(); location.hash = el.dataset.to; },
+  'land-watch': () => { const d = $('#demo'); if (d) d.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
   poke: (el) => { const m = el.querySelector('.mascot'); if (!m) return; m.classList.remove('poke'); void m.getBoundingClientRect(); m.classList.add('poke'); setTimeout(() => m.classList.remove('poke'), 750); },
   'land-start': (el) => { resetOnboarding(el.dataset.k); location.hash = '#/onboarding'; },
   'land-demo': () => { St.S.onboarded = true; St.save(); location.hash = '#/beranda'; },
