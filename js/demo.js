@@ -90,6 +90,7 @@ const FEATS = [
   ['sparkle', 'Latihan + Hint AI', '50+ soal terkurasi, diimprove akademisi terpilih.', 1, '#/daily'],
   ['book', 'Flashcard', 'Tap dan geser buat latihan di mana aja.', 2, '#/daily'],
   ['chart', 'Skill Insights', 'Skor performa dan rekomendasi belajar personal.', 6, '#/laporan'],
+  ['book', 'English Lab (IELTS/TOEFL)', 'Pilot: Reading & Writing gratis, Listening & Speaking suara asli.', null, '#/english'],
   ['grad', 'LPDP Navigator 2026', 'Cari, simpan, dan bandingkan program studi tujuan.', null, 'https://terang.ai/'],
   ['users', '#SquadTerang', 'Belajar bareng tanpa peringkat, plus Ruang Belajar Hening.', 7, '#/squad'],
   ['target', 'Terang Score', 'Skor Siap, Misi Harian, dan Jalur Belajar.', 7, '#/beranda'],

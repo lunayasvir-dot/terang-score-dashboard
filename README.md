@@ -1,4 +1,4 @@
-# Terang Score — Dashboard
+# Terang AI — prototipe dengan fitur Terang Score
 
 Prototipe dashboard **Terang Score** (Terang AI) berdasarkan dokumen *Product Requirement & UI Guideline* dan *Activation & Retention Solution (#SquadTerang)*, digabung dengan menu Terang AI yang sudah ada (Tanya AI, AI Interview, Review Dokumen, Kartu Ujian).
 
@@ -13,6 +13,17 @@ python -m http.server 5173 --bind 127.0.0.1
 ```
 
 Lalu buka <http://localhost:5173>.
+
+## Identitas
+
+- Nama aplikasi tetap **Terang AI** dengan logo resmi terang.ai (`assets/`, diunduh dari cdn.terang.ai). **Terang Score** adalah nama fitur utama (Skor Siap, Misi Harian, Jalur Belajar).
+- Maskot bernama **Nyala**: bulat biru, helm putih, visor gelap. Muncul di dalam aplikasi, bukan sebagai logo.
+- Pertama kali dibuka selalu **mode terang**; mode gelap bisa dipilih di Profil.
+- Tombol **Join WhatsApp Channel** (tautan resmi dari terang.ai) ada di landing (bagian #SquadTerang), halaman Squad, dan tur awal.
+
+## IELTS & TOEFL (pilot)
+
+Target baru IELTS Academic dan TOEFL iBT dengan **English Lab**: Reading Test dan Writing Test gratis, **Listening suara asli** dan **Speaking bareng Professor Terra** khusus Premium (suara memakai text-to-speech bawaan browser, belum ada perekaman atau penilaian suara), insight alumni, dan Kartu Ujian IELTS/TOEFL.
 
 ## Alur pertama kali
 

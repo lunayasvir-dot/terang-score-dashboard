@@ -39,6 +39,7 @@ export function mascotLine({ calib, risk, done, weak, streak }) {
 
 // Kalau maskot di Beranda diketuk.
 export const POKE = [
+  'Hehe, aku Nyala! Yuk lanjut belajar.',
   'Hehe, geli! Yuk satu misi lagi.',
   'Aku percaya kamu bisa, serius.',
   'Udah cek Radar Skill-mu hari ini?',

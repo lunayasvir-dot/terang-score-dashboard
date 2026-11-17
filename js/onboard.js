@@ -3,7 +3,7 @@
 import { icon, mascot, say } from './icons.js';
 import * as St from './state.js';
 import { esc, today, addDays, toISO, fromISO, longDate } from './state.js';
-import { TARGETS, BANK, DIAG_IDX } from './data.js';
+import { TARGETS, BANK, DIAG_IDX, diagOf, WA_CHANNEL } from './data.js';
 import { ringSVG } from './charts.js';
 import { $, $$, hooks } from './ui.js';
 import * as DEMO from './demo.js';
@@ -19,7 +19,7 @@ export function viewLanding() {
   const chat = [['me', 'Cara cepet hitung 15% dari 240 gimana?'], ['ai', '10% dari 240 = 24, 5% = 12. Jadi 15% = <b>36</b>.'], ['me', 'Oh, gitu doang ternyata.'], ['ai', 'Iya! Mau coba satu soal persen lagi?']]
     .map(([w, t], i) => `<div class="msg ${w}" style="--d:${i}">${w === 'ai' ? mascot('happy', 32) : ''}<div class="bubble2"><p>${t}</p></div></div>`).join('');
   return `<div class="landing">
-    <header class="l-wrap l-nav"><span class="l-logo">${mascot('happy', 40)} Terang Score</span><button class="btn small" data-act="land-demo"><span class="hide-sm">Aku udah punya akun</span><span class="show-sm">Masuk</span></button></header>
+    <header class="l-wrap l-nav"><span class="l-logo"><img src="assets/logo-terang-ai.svg" alt="terang.ai" class="brand-logo" width="132" height="31"></span><button class="btn small" data-act="land-demo"><span class="hide-sm">Aku udah punya akun</span><span class="show-sm">Masuk</span></button></header>
     <section class="l-wrap l-hero">
       <div><h1>Sepuluh soal sehari, sampai namamu ada di <span class="hl">pengumuman</span>.</h1>
         <p class="l-sub">Latihan CPNS, UTBK, dan LPDP yang tahu posisimu, nemenin tiap hari, dan bikin kamu belajar bareng squad. Gratis buat mulai.</p>
@@ -27,13 +27,13 @@ export function viewLanding() {
         <button class="btn link small" data-act="land-demo" style="padding:0;margin-top:12px">atau lihat dashboard contoh &rarr;</button>
         <div class="l-proof"><span class="avs">${proof}</span> Digunakan oleh 10K+ pembelajar Indonesia</div></div>
       <div class="l-stage" aria-hidden="true"><div class="l-blob"></div><div class="l-blob b2"></div>
-        <button class="mascot-btn" data-act="poke" tabindex="-1">${mascot('cheer', 260)}</button>
+        <button class="mascot-btn" data-act="poke" tabindex="-1">${mascot('cheer', 260)}</button><span class="name-tag">Hai, aku Nyala!</span>
         <span class="float f1">${icon('flame', 18)} 12 hari Api Belajar</span>
         <span class="float f2">${icon('half', 18)} Skor Siap 74 · Dikit Lagi</span>
         <span class="float f3">${icon('users', 18)} Squad 18/20 udah 4 hari</span>
         <span class="float f4">${icon('check', 18)} Misi Harian beres!</span></div>
     </section>
-    <div class="l-strip"><div class="l-wrap"><span>Siap buat</span><b>${icon('building', 20)} CPNS</b><b>${icon('book', 20)} UTBK-SNBT</b><b>${icon('grad', 20)} LPDP</b><span>dan belajar harian lainnya</span></div></div>
+    <div class="l-strip"><div class="l-wrap"><span>Siap buat</span><b>${icon('building', 20)} CPNS</b><b>${icon('book', 20)} UTBK-SNBT</b><b>${icon('grad', 20)} LPDP</b><b>${icon('book', 20)} IELTS</b><b>${icon('chat', 20)} TOEFL</b><span>IELTS & TOEFL lagi pilot</span></div></div>
     ${DEMO.demoSection()}${DEMO.featureGrid()}
 
     <section class="l-wrap l-sec"><div class="l-copy"><div class="l-num">01</div><span class="l-kicker">Kenali posisimu</span><h2>Lima menit, langsung tau posisimu.</h2>
@@ -46,7 +46,7 @@ export function viewLanding() {
         ${q.o.map((o, i) => `<button class="opt" data-act="land-try" data-i="${i}"><span class="key">${'ABCD'[i]}</span><span>${esc(o)}</span></button>`).join('')}<p class="small" id="land-fb" role="status" style="margin-top:12px"></p></div></section>
 
     <section class="l-wrap l-sec"><div class="l-copy"><div class="l-num">03</div><span class="l-kicker">#SquadTerang</span><h2>Belajar bareng, bukan saingan.</h2>
-      <p>Squad isinya 15–25 orang dengan target yang sama. Nggak ada peringkat dan nggak ada skor yang dipamerin. Yang dihitung cuma satu: kita sampai bareng-bareng.</p></div>
+      <p>Squad isinya 15–25 orang dengan target yang sama. Nggak ada peringkat dan nggak ada skor yang dipamerin. Yang dihitung cuma satu: kita sampai bareng-bareng.</p><a class="btn wa" href="${WA_CHANNEL}" target="_blank" rel="noopener">${icon('chat', 18)} Join WhatsApp Channel</a></div>
       <div class="l-demo io"><div class="sq-grid">${squad}</div><p class="small muted" style="margin-top:12px">Titik terisi = misi harian selesai hari itu.</p></div></section>
 
     <section class="l-wrap l-sec rev"><div class="l-copy"><div class="l-num">04</div><span class="l-kicker">Tanya AI</span><h2>Bingung jam 11 malam? Tanya aja.</h2>
@@ -55,19 +55,19 @@ export function viewLanding() {
 
     <section class="l-band"><div class="l-wrap"><div><b>10K+</b><span>pembelajar Indonesia</span></div><div><b>10 menit</b><span>sehari udah cukup</span></div><div><b>3</b><span>ujian besar: CPNS, UTBK, LPDP</span></div></div></section>
 
-    <section class="l-wrap l-exams">${[['CPNS', 'building', 'SKD lengkap: TWK, TIU, dan TKP. Latihan dari soal penalaran sampai manajemen waktu.'], ['UTBK', 'book', 'Penalaran dan literasi buat masuk PTN impian, dengan ritme 10 menit sehari.'], ['LPDP', 'grad', 'Tes Bakat Skolastik, esai, sampai latihan wawancara bareng AI.']]
-    .map(([k, ic, d]) => `<div class="l-exam"><span class="stat-ic">${icon(ic, 24)}</span><h3>${TARGETS[k].label}</h3><p class="small muted">${d}</p><button class="btn small" data-act="land-start" data-k="${k}">Siapin ${TARGETS[k].short}</button></div>`).join('')}</section>
+    <section class="l-wrap l-exams">${[['CPNS', 'building', 'SKD lengkap: TWK, TIU, dan TKP. Latihan dari soal penalaran sampai manajemen waktu.'], ['UTBK', 'book', 'Penalaran dan literasi buat masuk PTN impian, dengan ritme 10 menit sehari.'], ['LPDP', 'grad', 'Tes Bakat Skolastik, esai, sampai latihan wawancara bareng AI.'], ['IELTS', 'book', 'Pilot: Reading, Writing, plus Listening & Speaking pakai suara asli.'], ['TOEFL', 'chat', 'Pilot: 4 skill iBT dengan latihan Speaking bareng Professor Terra.']]
+    .map(([k, ic, d]) => `<div class="l-exam"><span class="stat-ic">${icon(ic, 24)}</span><h3>${TARGETS[k].label}${TARGETS[k].pilot ? ' <span class="pill gold">PILOT</span>' : ''}</h3><p class="small muted">${d}</p><button class="btn small" data-act="land-start" data-k="${k}">Siapin ${TARGETS[k].short}</button></div>`).join('')}</section>
 
     <section class="l-wrap l-final">${mascot('proud', 140)}<h2>Siap mulai? Sepuluh menit aja dulu.</h2><p class="muted">Tanpa kartu, tanpa ribet. Kamu bisa berhenti kapan aja.</p>
       <button class="btn primary xl" data-act="land-start" style="margin-top:10px">Mulai gratis</button></section>
-    <footer class="l-wrap l-foot"><span>© 2026 Terang Score · prototipe</span><span>Angka 10K+ dari terang.ai. Data lain di halaman ini contoh.</span></footer>
+    <footer class="l-wrap l-foot"><span>© 2026 Terang AI · prototipe fitur Terang Score</span><span>Angka 10K+ dari terang.ai. Data lain di halaman ini contoh.</span></footer>
   </div>`;
 }
 
 /* ------------------------------------------------------------------ ONBOARDING */
 const QS = {
-  name: { ask: () => 'Hai! Aku maskot Terang. Boleh tau nama panggilanmu?', type: 'text', optional: true },
-  goal: { ask: (a) => `Salam kenal${a.name ? ', ' + esc(a.name) : ''}! Lagi siap-siap buat apa?`, opts: [['CPNS', 'CPNS', 'building', 'SKD: TWK, TIU, TKP'], ['UTBK', 'UTBK-SNBT', 'book', 'Masuk PTN impian'], ['LPDP', 'LPDP', 'grad', 'Beasiswa S2/S3'], ['UMUM', 'Belajar umum aja', 'sparkle', 'Mapel, kuliah, kerja']] },
+  name: { ask: () => 'Hai! Aku <b>Nyala</b>, teman belajarmu di Terang AI. Boleh tau nama panggilanmu?', type: 'text', optional: true },
+  goal: { ask: (a) => `Salam kenal${a.name ? ', ' + esc(a.name) : ''}! Lagi siap-siap buat apa?`, opts: [['CPNS', 'CPNS', 'building', 'SKD: TWK, TIU, TKP'], ['UTBK', 'UTBK-SNBT', 'book', 'Masuk PTN impian'], ['LPDP', 'LPDP', 'grad', 'Beasiswa S2/S3'], ['IELTS', 'IELTS', 'book', 'Pilot · studi & kerja di luar negeri'], ['TOEFL', 'TOEFL', 'chat', 'Pilot · syarat kampus & beasiswa'], ['UMUM', 'Belajar umum aja', 'sparkle', 'Mapel, kuliah, kerja']] },
   status: { ask: () => 'Sekarang kamu lagi…', opts: [['sma', 'Pelajar SMA/SMK', 'book'], ['mhs', 'Mahasiswa', 'grad'], ['fresh', 'Fresh graduate', 'star'], ['kerja', 'Sudah bekerja', 'building']] },
   age: { ask: () => 'Biar fiturnya pas, usiamu berapa?', note: 'Fitur sosial dibuka bertahap sesuai usia, demi keamananmu.', opts: [['u16', 'Di bawah 16', 'user'], ['16-17', '16–17 tahun', 'user'], ['18+', '18 tahun ke atas', 'user']] },
   date: { ask: () => 'Kapan ujianmu?', type: 'date' },
@@ -84,7 +84,7 @@ export function resetOnboarding(goal) {
 }
 resetOnboarding();
 const steps = () => ['name', 'goal', 'status', 'age', ...(OB.a.goal === 'UMUM' ? [] : ['date']), 'daily', 'time', 'source', 'pre', 'diag', 'result'];
-const diagQs = () => DIAG_IDX.map((k) => BANK[k]);
+const diagQs = () => diagOf(OB.a.goal && TARGETS[OB.a.goal] ? OB.a.goal : 'CPNS');
 const answered = (k) => {
   const a = OB.a;
   if (!QS[k] || k === 'name' || k === 'source') return true;
@@ -122,7 +122,7 @@ export function viewOnboarding() {
     const sheet = d.picked == null ? '' : `<div class="sheet ${ok ? 'ok' : 'no'}" role="status"><div class="sheet-in"><div class="sheet-msg">${mascot(ok ? 'cheer' : 'think', 56)}<div><h3>${ok ? 'Tepat!' : 'Belum pas, santai aja.'}</h3><p class="small">${esc(q.e)}</p></div></div>
       <button class="btn primary" data-act="ob-dnext">${d.i === qs.length - 1 ? 'Lihat hasil' : 'Lanjut'}</button></div></div>`;
     return `<div class="ob"><div class="ob-top"><a class="qz-x" href="#/mulai" aria-label="Tutup">${icon('close', 22)}</a><div class="bar"><i style="width:${((d.i + (d.picked != null ? 1 : 0)) / qs.length) * 100}%"></i></div><span class="small muted">${d.i + 1}/${qs.length}</span></div>
-      <div class="ob-body" style="padding-bottom:200px"><span class="qz-label">Cek posisi · ${esc(q.topic)}</span><h2 class="qz-q">${esc(q.q)}</h2>${opts}<p class="qz-hint">Tips: tekan 1–4 di keyboard.</p></div>${sheet}</div>`;
+      <div class="ob-body" style="padding-bottom:200px"><span class="qz-label">Cek posisi · ${esc(q.topic)}</span>${q.p ? `<p class="passage">${esc(q.p)}</p>` : ''}<h2 class="qz-q">${esc(q.q)}</h2>${opts}<p class="qz-hint">Tips: tekan 1–4 di keyboard.</p></div>${sheet}</div>`;
   }
   // result
   const a = OB.a; const target = a.goal && a.goal !== 'UMUM' ? a.goal : null;
@@ -150,7 +150,7 @@ function finish() {
     examDate: a.date && !a.dateUnknown ? a.date : toISO(addDays(today(), TARGETS[target].days)),
     age: a.age || '18+', reminderHour: +(a.time || 19), dailyMin: +(a.daily || 30), status: a.status, source: a.source, general: a.goal === 'UMUM',
     scoreState: 'calibrating', streak: 0, bestStreak: 0, studyDates: [], userDays: 0, sessions: 0, points: 0, earnedMonth: 0, ledger: [],
-    flagged: [...new Set(OB.d.wrong)], pathStep: 0,
+    flagged: [...new Set(OB.d.wrong)], pathStep: 0, toured: false,
   }));
   St.addPoints(10, 'Cek posisi selesai'); St.save();
   location.hash = a.goal === 'UMUM' ? '#/profil?tab=eksplor' : '#/beranda';

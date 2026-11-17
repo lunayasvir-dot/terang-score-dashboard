@@ -10,6 +10,8 @@ const S = () => St.S;
 export const TABS = {
   UTBK: { label: 'UTBK', n: 10, dur: '3 jam 15 menit', blurb: 'Simulasi UTBK-SNBT dalam berbagai paket pilihan.', free: 'TPS (Gratis)', pat: 'UTBK Ambis 2026', sub: 'Simulasi Tes Potensi Skolastik UTBK Terang AI', ic: 'book' },
   LPDP: { label: 'LPDP', n: 16, dur: '1 jam 30 menit', blurb: 'Simulasi tes untuk beasiswa LPDP dalam berbagai paket pilihan.', free: 'TBS (Gratis)', pat: 'TBS Ambis 2026', sub: 'Simulasi Tes Bakat Skolastik LPDP Terang AI', ic: 'grad' },
+  IELTS: { label: 'IELTS', n: 4, dur: '2 jam 45 menit', blurb: 'Pilot: simulasi IELTS Academic, Reading sampai Speaking.', free: 'Reading Test (Gratis)', pat: 'IELTS Mock 2026', sub: 'Simulasi IELTS Academic Terang AI', ic: 'book' },
+  TOEFL: { label: 'TOEFL', n: 4, dur: '2 jam', blurb: 'Pilot: simulasi TOEFL iBT 4 skill.', free: 'Reading Section (Gratis)', pat: 'TOEFL Mock 2026', sub: 'Simulasi TOEFL iBT Terang AI', ic: 'chat' },
   CPNS: { label: 'CPNS', n: 4, dur: '1 jam 40 menit', blurb: 'Simulasi SKD CPNS dalam berbagai paket pilihan.', free: 'SKD (Gratis)', pat: 'SKD Ambis 2026', sub: 'Simulasi SKD CPNS Terang AI', ic: 'building' },
 };
 const PRICE = 15000;

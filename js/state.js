@@ -13,10 +13,9 @@ export const longDate = (d) => d.toLocaleDateString('id-ID', { weekday: 'long', 
 
 export function fresh(over = {}) {
   const t = today();
-  const dark = typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: dark)').matches;
-  return {
+    return {
     onboarded: true, name: '', target: over.target || 'CPNS', examDate: toISO(addDays(t, TARGETS[over.target || 'CPNS'].days)),
-    scoreState: 'terukur', theme: dark ? 'dark' : 'light', reduceMotion: false, age: '18+',
+    scoreState: 'terukur', theme: 'light', reduceMotion: false, age: '18+',
     premiumUntil: null, trialClaimed: false, vouchers: 0,
     credits: 2000, cards: [], payments: [], notifSeen: [], interviews: 0, reviews: 0,
     pathStep: 9, dailyMin: 30, status: null, source: null, general: false,
@@ -55,7 +54,7 @@ function rollover() {
   if (daysBetween(last, today()) > 1) S.streak = 0;
 }
 
-export const cfg = () => ({ ...TARGETS[S.target], topics: TOPICS });
+export const cfg = () => ({ bank: 'tps', ...TARGETS[S.target], topics: TARGETS[S.target].topics || TOPICS });
 export const premiumLeft = () => (S.premiumUntil ? Math.max(0, daysBetween(today(), fromISO(S.premiumUntil))) : 0);
 export const examDate = () => fromISO(S.examDate);
 export const daysToExam = () => daysBetween(today(), examDate());
@@ -74,7 +73,7 @@ function rng(seedStr) {
 // 8 minggu terakhir per topik, deterministik per target. Data ilustrasi.
 export function weeklySeries() {
   const t = today(); const n = 8;
-  const topics = TOPICS.map(([name, end]) => {
+  const topics = cfg().topics.map(([name, end]) => {
     const r = rng(TARGETS[S.target].subtes + name);
     const start = end - (14 + Math.round(r() * 12));
     const vals = Array.from({ length: n }, (_, i) => {

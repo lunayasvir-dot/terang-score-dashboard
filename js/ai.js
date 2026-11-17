@@ -183,6 +183,7 @@ export function viewAi() {
     <div class="stack"><div class="card tint"><div class="say">${mascot('cheer', 72)}<div>Mau ngapain hari ini? Tanya soal, latihan wawancara, atau cek esaimu.</div></div></div>
     <div class="grid cols-3">${[['tanya', 'Tanya AI', 'chat', 'Tanya apa aja, dari ujian sampai tugas kuliah.', ''], ['interview', 'AI Interview', 'wave', 'Latihan wawancara dan presentasi.', 'BARU'], ['review', 'Review Dokumen', 'doc', 'Cek esai, CV, dan surat lamaran.', 'BARU']].map(([id, n, ic, d, b]) =>
     `<a class="card linkcard" href="#/${id}"><span class="stat-ic">${icon(ic, 22)}</span><div><h3>${n} ${b ? `<span class="pill gold">${b}</span>` : ''}</h3><p class="small muted">${d}</p></div></a>`).join('')}</div>
+    <a class="card linkcard" href="#/english"><span class="stat-ic">${icon('book', 22)}</span><div><h3>English Lab <span class="pill gold">PILOT</span></h3><p class="small muted">IELTS & TOEFL: Reading, Listening, Writing, Speaking.</p></div></a>
     <a class="card linkcard" href="#/profil?tab=eksplor"><span class="stat-ic">${icon('sparkle', 22)}</span><div><h3>Eksplor Kategori Lain</h3><p class="small muted">Mapel umum, mata kuliah, karier, dan tanya alumni.</p></div></a></div>`;
 }
 

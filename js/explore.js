@@ -16,6 +16,10 @@ export const CATEGORIES = [
 
 // Alumni contoh. Nama dan cerita fiktif untuk prototipe.
 export const ALUMNI = [
+  { id: 'nadia', exam: 'IELTS', name: 'Nadia', tag: '#TerangiBersamaNadia', role: 'IELTS band 7.5, kuliah S2 di Inggris (contoh)', subjects: ['Writing Task 2', 'Speaking', 'Listening'],
+    qa: [{ q: 'Writing-ku mentok di band 6. Apa yang paling ngaruh?', a: 'Task response. Jawab pertanyaannya persis, kasih posisi yang jelas di intro, dan tiap paragraf punya satu ide dengan contoh nyata.' }, { q: 'Gimana latihan Speaking sendirian?', a: 'Rekam dirimu tiap hari 2 menit, dengar ulang, catat kata yang sering diulang. Habis itu latihan bareng Professor Terra.' }] },
+  { id: 'bima', exam: 'TOEFL', name: 'Bima', tag: '#TerangiBersamaBima', role: 'TOEFL iBT 105 (contoh)', subjects: ['Listening', 'Integrated Writing'],
+    qa: [{ q: 'Listening TOEFL cepet banget. Tips?', a: 'Jangan tulis kalimat lengkap. Catat kata kunci dan panah sebab-akibat. Fokus ke ide utama dosennya.' }, { q: 'Berapa lama persiapannya?', a: 'Buatku 6 minggu dengan latihan tiap hari. Mock test seminggu sekali biar kebiasa sama durasinya.' }] },
   {
     id: 'jerome', name: 'Jerome', tag: '#TerangiBersamaJerome', role: 'Mahasiswa Teknik Sipil, penerima beasiswa (contoh)',
     subjects: ['Kalkulus', 'Fisika Dasar', 'Statistika'],
@@ -43,6 +47,8 @@ export const ALUMNI = [
 ];
 
 export const PREMIUM_FEATURES = [
+  { id: 'listening', ic: 'headset', name: 'Listening Suara Asli (IELTS/TOEFL)', desc: 'Audio penutur asli dengan berbagai aksen, lengkap dengan soal dan pembahasan.' },
+  { id: 'speaking', ic: 'wave', name: 'Speaking bareng Professor Terra', desc: 'Jawab pertanyaan Speaking pakai suara, dapat masukan kelancaran, kosakata, dan pelafalan.' },
   { id: 'alumni-chat', ic: 'chat', name: 'Ngobrol Bareng Alumni', desc: 'Tanya jawab langsung dan detail sama alumni yang udah lolos, lewat seri #TerangiBersama.' },
   { id: 'voice', ic: 'headset', name: 'Voice Channel Belajar', desc: 'Ruang belajar bersuara bareng squad. Audio saja, dimoderasi, khusus 18+.', tag: 'Khusus 18+' },
   { id: 'live-class', ic: 'video', name: 'Kelas Live Bareng Alumni', desc: 'Sesi mingguan buat bahas soal, strategi, dan tanya jawab langsung.' },

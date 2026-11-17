@@ -113,3 +113,40 @@ export const PASSPORT_LOG = [
   { src: 'Simulasi AI', text: 'Simulasi tryout SKD (sesi ke-3)', ago: 14 },
   { src: 'Aplikasi', text: 'Rapor Mingguan minggu ke-7 dibuka', ago: 7 },
 ];
+
+/* ===================== IELTS & TOEFL (pilot) ===================== */
+TARGETS.IELTS = { label: 'IELTS Academic', short: 'IELTS', subtes: '4 skill', days: 45, max: 9, squad: 'Squad IELTS #3', bank: 'eng', pilot: true,
+  topics: [['Reading', 72], ['Listening', 68], ['Writing', 61], ['Speaking', 57]] };
+TARGETS.TOEFL = { label: 'TOEFL iBT', short: 'TOEFL', subtes: '4 skill', days: 40, max: 120, squad: 'Squad TOEFL #5', bank: 'eng', pilot: true,
+  topics: [['Reading', 74], ['Listening', 66], ['Speaking', 59], ['Writing', 63]] };
+// Skill yang butuh suara asli (audio & mikrofon) = fitur Premium.
+export const VOICE_TOPICS = ['Listening', 'Speaking'];
+export const WA_CHANNEL = 'https://whatsapp.com/channel/0029VaqSaX6DTkK2qxC3eR3T';
+
+const P1 = 'Researchers found that students who slept eight hours scored higher on memory tests than those who slept only five. The difference was largest for tasks that required recalling new information.';
+const P2 = 'Urban gardens are spreading across many cities. Besides providing fresh food, they give residents a place to meet, and studies suggest they can lower summer temperatures in crowded neighbourhoods.';
+// Bank soal bahasa Inggris: Reading (dengan bacaan) dan Writing (grammar & kosakata). Selang-seling per topik.
+export const ENG_BANK = [
+  { topic: 'Reading', p: P1, q: 'What is the main idea of the passage?', o: ['Sleep improves memory, especially for new information', 'Students should study for eight hours', 'Memory tests are too difficult', 'Five hours of sleep is enough'], a: 0, e: 'Inti bacaan: tidur lebih lama meningkatkan memori, terutama untuk informasi baru.' },
+  { topic: 'Writing', q: 'Choose the correct sentence.', o: ['She go to campus every day.', 'She goes to campus every day.', 'She going to campus every day.', 'She gone to campus every day.'], a: 1, e: 'Subjek orang ketiga tunggal di simple present pakai "goes".' },
+  { topic: 'Reading', p: P1, q: 'Which students scored higher?', o: ['Those who slept five hours', 'Those who slept eight hours', 'Those who did not sleep', 'Those who studied longer'], a: 1, e: 'Teks menyebut siswa yang tidur delapan jam dapat skor lebih tinggi.' },
+  { topic: 'Writing', q: 'If I ___ more time, I would join the debate club.', o: ['have', 'had', 'will have', 'having'], a: 1, e: 'Conditional type 2: if + past simple, would + verb.' },
+  { topic: 'Reading', p: P2, q: 'According to the passage, urban gardens can…', o: ['replace supermarkets', 'lower summer temperatures', 'increase traffic', 'raise house prices'], a: 1, e: 'Kalimat terakhir menyebut kebun kota bisa menurunkan suhu musim panas.' },
+  { topic: 'Writing', q: 'The closest meaning of "reluctant" is…', o: ['unwilling', 'eager', 'careful', 'tired'], a: 0, e: '"Reluctant" berarti enggan.' },
+  { topic: 'Reading', p: P2, q: 'The word "residents" refers to…', o: ['tourists', 'people who live in the area', 'farmers', 'researchers'], a: 1, e: '"Residents" = orang yang tinggal di daerah itu.' },
+  { topic: 'Writing', q: 'The report ___ by the team yesterday.', o: ['finished', 'was finished', 'has finished', 'finishing'], a: 1, e: 'Pasif lampau: was/were + past participle.' },
+  { topic: 'Reading', p: P1, q: 'The difference was largest for tasks that required…', o: ['solving math problems', 'physical exercise', 'recalling new information', 'reading quickly'], a: 2, e: 'Disebut di kalimat terakhir bacaan.' },
+  { topic: 'Writing', q: '"Mitigate" means to…', o: ['worsen', 'reduce the severity of', 'ignore', 'celebrate'], a: 1, e: '"Mitigate" = mengurangi tingkat keparahan.' },
+  { topic: 'Reading', p: P2, q: 'What is the writer\'s attitude towards urban gardens?', o: ['Negative', 'Positive', 'Uncertain', 'Angry'], a: 1, e: 'Penulis menyebut banyak manfaat, jadi sikapnya positif.' },
+  { topic: 'Writing', q: 'Neither of the answers ___ correct.', o: ['are', 'is', 'were', 'be'], a: 1, e: '"Neither of" diikuti verba tunggal dalam bahasa formal.' },
+];
+export const ENG_DIAG_IDX = [0, 1, 2, 3, 4];
+export const bankOf = (target) => (TARGETS[target] && TARGETS[target].bank === 'eng' ? ENG_BANK : BANK);
+export const diagOf = (target) => (TARGETS[target] && TARGETS[target].bank === 'eng' ? ENG_DIAG_IDX.map((k) => ENG_BANK[k]) : DIAG_IDX.map((k) => BANK[k]));
+
+PLAYBOOKS.push(
+  { id: 'pb6', exam: 'IELTS', title: 'Dari band 6 ke 7.5: fokus ke Writing Task 2', by: 'Alumni IELTS (contoh)', min: 5,
+    points: ['Pakai struktur 4 paragraf: intro, dua body, kesimpulan.', 'Tiap body paragraf: satu ide, satu contoh nyata.', 'Latih Speaking tiap hari 10 menit, rekam lalu dengar ulang.', 'Listening: biasakan aksen British dan Australia, bukan cuma Amerika.'] },
+  { id: 'pb7', exam: 'TOEFL', title: 'TOEFL iBT 100+: atur energi di 4 section', by: 'Alumni TOEFL (contoh)', min: 4,
+    points: ['Reading: baca pertanyaan dulu, baru scan teks.', 'Listening: catat kata kunci, jangan tulis kalimat lengkap.', 'Speaking: pakai template 15 detik persiapan → jawaban 45 detik.', 'Writing: sisakan 3 menit buat cek grammar.'] },
+);

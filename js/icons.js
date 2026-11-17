@@ -43,7 +43,7 @@ const P = {
   gift2: '<rect x="3" y="9" width="18" height="11" rx="2"/><path d="M12 9v11M3 13h18"/><path d="M12 9c-2-4-6-3-5 0 .5 1.500 3 1 5 0zM12 9c2-4 6-3 5 0-.5 1.500-3 1-5 0z"/>',
 };
 
-// Maskot Terang Score: bulat biru, helm putih, visor gelap, antena bintang emas.
+// Nyala, maskot Terang AI (logo resmi tetap logo terang.ai): bulat biru, helm putih, visor gelap, antena bintang emas.
 // Terinspirasi logo Terang AI (lingkaran biru + siluet helm). Ganti fungsi ini
 // dengan aset maskot resmi kalau sudah ada; semua tampilan memakai mascot().
 const FACE = {
@@ -57,7 +57,7 @@ const FACE = {
 // lompat saat senang/bangga, miring saat mikir. Mati otomatis kalau "kurangi gerakan" aktif.
 export function mascot(mood = 'happy', size = 64, extra = '') {
   const m = FACE[mood] ? mood : 'happy';
-  return `<svg class="mascot mood-${m} ${extra}" viewBox="0 -8 100 108" width="${size}" height="${Math.round(size * 1.08)}" role="img" aria-label="Maskot Terang Score">
+  return `<svg class="mascot mood-${m} ${extra}" viewBox="0 -8 100 108" width="${size}" height="${Math.round(size * 1.08)}" role="img" aria-label="Nyala, maskot Terang AI">
     <ellipse class="m-shadow" cx="50" cy="99" rx="26" ry="3.500" fill="#111418" opacity=".12"/>
     <g class="m-float">
       <g class="m-ant"><line x1="50" y1="5" x2="50" y2="-2" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
