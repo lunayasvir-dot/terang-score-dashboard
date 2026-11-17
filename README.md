@@ -4,15 +4,11 @@ Prototipe dashboard **Terang Score** (Terang AI) berdasarkan dokumen *Product Re
 
 Siklusnya: kenali posisimu → susun rencana → belajar bareng squad → buktikan hasilnya.
 
-## Menjalankan di localhost
+## Coba langsung
 
-Tanpa build step dan tanpa dependensi. Cukup server statis (modul ES butuh `http://`, bukan `file://`):
+**Live:** <https://terang-score-dashboard-ogqh.vercel.app>
 
-```bash
-python -m http.server 5173 --bind 127.0.0.1
-```
-
-Lalu buka <http://localhost:5173>.
+Buka di laptop atau HP. Pertama kali dibuka akan muncul landing page; pilih "Mulai gratis" untuk onboarding, atau "lihat dashboard contoh" untuk langsung masuk dengan data demo.
 
 ## Identitas
 
