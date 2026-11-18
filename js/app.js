@@ -3,7 +3,7 @@ import * as D from './data.js';
 import { ringSVG, lineChart, BAND_META, fmtDate } from './charts.js';
 import { icon, mascot, say } from './icons.js';
 import * as St from './state.js';
-import { esc, today, addDays, toISO, fromISO, longDate, cfg, examDate, daysToExam, isDone,
+import { esc, today, addDays, toISO, fromISO, daysBetween, longDate, cfg, examDate, daysToExam, isDone,
   streakAtRisk, band, weeklySeries, scoreInfo, squad, addPoints, premiumLeft } from './state.js';
 import { $, $$, rp, initial, ribbon, openDlg, closeDlg, hooks, lockChip } from './ui.js';
 import * as CP from './copy.js';
@@ -13,6 +13,7 @@ import * as EX from './explore.js';
 import * as OBD from './onboard.js';
 import * as EN from './english.js';
 import * as PS from './pass.js';
+import { track, events as demoEvents, clearEvents, devOn, EVENTS } from './analytics.js';
 
 const S = () => St.S;
 
@@ -101,11 +102,11 @@ function gapRows() {
     const flagged = S().flagged.includes(r.name);
     const tag = flagged ? ` <span class="tag">Baru ditandai</span>` : '';
     if (calib) return `<div class="gap-row"><span class="gap-name">${esc(r.name)}${tag}</span>
-      <span class="muted small">masih dikenali</span><div class="bar" style="opacity:.6"></div></div>`;
+      <span class="muted small">masih dikenali</span><div class="bar" style="opacity:.6"></div>${i === 0 ? `<div class="btn-row" style="grid-column:1/-1;margin-top:6px"><a class="btn small link" href="#/kartu" data-act="ticket-view" data-topic="${esc(r.name)}">${icon('ticket', 16)} Tryout buat cek posisi lebih lengkap</a></div>` : ''}</div>`;
     const b = band(r.v);
     return `<div class="gap-row"><span class="gap-name">${esc(r.name)}${tag}</span>${bandPill(r.v)}
       <div class="bar ${b === 'close' ? 'gold' : b === 'needs' ? 'orange' : ''}" role="img" aria-label="${esc(r.name)} ${r.v} dari 100"><i style="width:${r.v}%"></i></div>
-      ${i === 0 ? `<button class="btn small" data-act="train" data-topic="${esc(r.name)}" style="grid-column:1/-1;justify-self:start;margin-top:6px">${icon('zap', 16)} Asah topik ini</button>` : ''}</div>`;
+      ${i === 0 ? `<div class="btn-row" style="grid-column:1/-1;margin-top:6px"><button class="btn small" data-act="train" data-topic="${esc(r.name)}">${icon('zap', 16)} Asah topik ini</button><a class="btn small link" href="#/kartu" data-act="ticket-view" data-topic="${esc(r.name)}">${icon('ticket', 16)} Tryout buat topik ini</a></div>` : ''}</div>`;
   }).join('');
 }
 
@@ -134,11 +135,25 @@ function pathHTML() {
   return out;
 }
 
+function focusReason(topic, calib) {
+  return calib ? `Fokus ke <b>${esc(topic)}</b> karena tadi di cek posisi belum pas.` : `Fokus ke <b>${esc(topic)}</b> karena skornya paling rendah.`;
+}
+function firstWeekCards() {
+  const s = S(); const days = s.joinedAt ? daysBetween(fromISO(s.joinedAt), today()) : 0; let out = '';
+  if (!s.webImported && !s.webDismissed) out += `<div class="card web-card"><div class="say">${mascot('happy', 48)}<div><h3>Pernah latihan di terang.ai versi web?</h3>
+    <p class="small">Bawa riwayatmu ke sini biar Skor Siap-mu nggak mulai dari nol.</p></div></div>
+    <div class="btn-row" style="margin-top:10px"><button class="btn small primary" data-act="web-open">Lanjutkan dari web</button><button class="btn small link" data-act="web-dismiss">Nggak, makasih</button></div></div>`;
+  if (!s.squadJoined && days <= 7) out += `<div class="card squad-invite"><div class="say">${mascot('cheer', 48)}<div><h3>Gabung squad biar belajar bareng</h3>
+    <p class="small">${esc(cfg().squad)} isinya teman dengan target yang sama. Nggak ada ranking, cuma saling nyemangatin.</p></div></div>
+    <div class="btn-row" style="margin-top:10px"><button class="btn small primary" data-act="squad-join">Gabung squad</button><a class="btn small link" href="#/squad">Intip dulu</a></div></div>`;
+  return out;
+}
 function viewHome() {
   const c = cfg(), d = daysToExam(), info = scoreInfo(), st = S().scoreState, calib = st === 'calibrating';
   const sq = squad(); const done = isDone(); const risk = streakAtRisk();
   const dayText = d > 0 ? `${d} hari lagi` : d === 0 ? 'hari ini' : `${-d} hari lalu`;
-  const weak = info.weak.name;
+  const weak = calib && S().flagged.length ? S().flagged[0] : info.weak.name;
+  const why = focusReason(weak, calib);
   const mood = calib ? 'think' : risk ? 'cheer' : done ? 'proud' : 'happy';
   const msg = CP.mascotLine({ calib, risk, done, weak: esc(weak), streak: S().streak });
   const hero = `<div class="home-hero"><button class="mascot-btn" data-act="poke" aria-label="Sapa Nyala">${mascot(mood, 104)}<span class="name-tag sm">Nyala</span></button>
@@ -146,9 +161,9 @@ function viewHome() {
     <div class="bubble" id="hero-line">${msg}</div></div></div>`;
   const warn = d > 0 && d <= 14 ? `<div class="card warn"><p class="warn-title">${icon('alert')} Ujian ${esc(c.label)} tinggal ${d} hari</p>
       <p>Waktunya latihan penuh dan fokus ke topik yang paling lemah. Kamu nggak sendirian, squad nemenin kamu.</p></div>` : '';
-  const report = d <= 0 && d >= -7 && st !== 'terkalibrasi' ? `<div class="card tint"><div class="card-head"><h2>Udah ujian? Ceritain hasilnya, yuk!</h2></div>
-      <p class="muted">Hasil resmi bikin skormu makin akurat dan dapet poin. Bukti pendukung sifatnya opsional.</p>
-      <div class="btn-row" style="margin-top:12px"><a class="btn" href="#/lapor-hasil">${icon('trophy')} Lapor hasil · +100 poin</a></div></div>` : '';
+  const report = d <= 0 && !S().outcomeDone ? `<div class="card post-exam"><div class="say">${mascot('cheer', 64)}<div><h2>Ujian ${esc(c.short)}-mu udah lewat. Gimana hasilnya?</h2>
+      <p class="small">Selamat udah sampai sini! Cerita sebentar, dapat 100 poin, terus kita pilih target berikutnya bareng.</p></div></div>
+      <div class="btn-row" style="margin-top:12px"><a class="btn primary" href="#/lapor-hasil">${icon('trophy')} Ceritain hasilnya</a></div></div>` : '';
   const ringBadge = st === 'terkalibrasi' ? `<span class="pill gold badge-cal">${icon('check', 16)} Sudah Pas</span>` : '';
   const ring = `<div class="card ring-card ring-sm"><h2>Skor Siap-mu</h2>
       <button class="ring-btn" data-act="ring-detail" aria-label="${calib ? 'Buka rincian skor, saat ini masih Lagi Kenalan' : `Buka rincian skor, Skor Siap ${info.score}, status ${BAND_META[info.band].label}`}">
@@ -157,10 +172,10 @@ function viewHome() {
       <p class="small muted">Skor ini bukan jaminan lolos ujian.</p></div>`;
   const daily = `<div class="card"><div class="card-head"><h2>Misi Harian</h2>${done ? `<span class="pill tint">${icon('check', 16)} Beres</span>` : `<span class="pill tint">${icon('clock', 14)} ${OBD.durLabel(S().dailyMin || 30)}/hari</span>`}</div>
       <div class="streak">${miniRing(done ? 1 : 0, done ? 'Misi harian selesai' : 'Misi harian belum dikerjakan', done ? '10/10' : '0/10')}
-      <p>${done ? 'Satu misi udah cukup buat jaga Api Belajarmu hari ini. Kerja bagus!' : `10 soal${calib ? '' : `, fokus ke <b>${esc(weak)}</b>`}.`}</p></div>
+      <p>${done ? 'Satu misi udah cukup buat jaga Api Belajarmu hari ini. Kerja bagus!' : `10 soal. ${why}`}</p></div>
       <div class="btn-row" style="margin-top:14px">${done
         ? `<a class="btn" href="#/laporan">${icon('chart')} Lihat Rapor Mingguan</a>`
-        : `<a class="btn primary block" href="#/daily${calib ? '' : `?topic=${encodeURIComponent(weak)}`}">${icon('zap')} Mulai Misi Harian</a>`}</div></div>`;
+        : `<a class="btn primary block" href="#/daily?topic=${encodeURIComponent(weak)}">${icon('zap')} Mulai Misi Harian</a>`}</div></div>`;
   const streak = `<div class="card${risk ? ' warn' : ''}"><div class="streak"><div class="flame ${S().streak > 0 ? 'lit' : ''}" id="flame">${icon('flame', 30)}</div>
       <div><div class="streak-num">${S().streak} <span class="small muted" style="font-weight:700">hari Api Belajar</span></div>
       <p class="small muted">Rekor ${Math.max(S().bestStreak, S().streak)} hari · Tiket Libur: ${S().restPasses}</p></div></div>
@@ -185,7 +200,7 @@ function viewHome() {
   const radar = `<div class="card"><div class="card-head"><h2>Radar Skill</h2><span class="pill tint">${icon('target', 16)} ${c.subtes}</span></div>${gapRows()}</div>`;
   return `<div class="stack">${hero}${quickLinks()}${warn}${report}
     <div class="home-layout"><div class="stack">${path}</div>
-    <div class="side-col">${ring}${PS.recommendCard(S().target)}${daily}${streak}${radar}${squadCard}${teaser}</div></div></div>`;
+    <div class="side-col">${firstWeekCards()}${ring}${PS.recommendCard(S().target)}${daily}${streak}${radar}${squadCard}${teaser}</div></div></div>`;
 }
 
 /* ------------------------------------------------------------------ RAPOR MINGGUAN */
@@ -272,7 +287,7 @@ function viewDaily(params) {
   return `<div class="qz"><div class="qz-top"><a class="qz-x" href="${tryout ? '#/kartu?sub=saya' : '#/beranda'}" aria-label="Keluar">${icon('close', 22)}</a>
       <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="10" aria-valuenow="${n}"><i style="width:${Math.max(3, n * 10)}%"></i></div>
       ${Q.combo >= 2 ? `<span class="qz-combo">${icon('flame', 18)} ${Q.combo}x</span>` : `<span class="small muted">${n}/10</span>`}</div>
-    <span class="qz-label">${label}</span>${q.p ? `<p class="passage">${esc(q.p)}</p>` : ''}<h1 class="qz-q">${esc(q.q)}</h1>${opts}<p class="qz-hint">Tips: tekan 1–4 buat jawab, Enter buat lanjut.</p></div>${sheet}`;
+    <span class="qz-label">${label}</span>${Q.focus && !tryout && Q.i === 0 && Q.picked == null ? `<p class="small muted" style="margin:4px 0 0">${focusReason(Q.focus, S().scoreState === 'calibrating')}</p>` : ''}${q.p ? `<p class="passage">${esc(q.p)}</p>` : ''}<h1 class="qz-q">${esc(q.q)}</h1>${opts}<p class="qz-hint">Tips: tekan 1–4 buat jawab, Enter buat lanjut.</p></div>${sheet}`;
 }
 function finishDaily() {
   Q.finished = true; Q.secs = Math.round((Date.now() - Q.t0) / 1000);
@@ -288,6 +303,7 @@ function finishDaily() {
     s.userDays = Math.min(4, s.userDays + 1); s.sessions += 1;
     const ms = CP.milestone(s.streak); if (ms) ribbon(ms);
     Q.got = addPoints(20, 'Misi harian selesai');
+    track('daily_mission_done', { topic: Q.focus || null, right: Q.right });
     if (s.scoreState === 'calibrating' && s.sessions >= 3) { s.scoreState = 'terukur'; ribbon('Skormu sekarang sudah Terukur!'); }
     checkSquadGoal();
   } else if (Q.path) {
@@ -348,7 +364,9 @@ function viewSquad() {
   const joined = S().room;
   const ageNote = S().age === '18+' ? '' : `<p class="small muted" style="margin-top:8px">${icon('lock', 16)} Mode usia ${esc(S().age === 'u16' ? 'di bawah 16' : '16–17')}: tanpa obrolan bebas dan tanpa pesan langsung, hanya reaksi siap pakai.</p>`;
   return `<div class="page-head"><div><h1>#SquadTerang</h1><p>${esc(cfg().squad)} · ${sq.total} anggota</p></div></div>
-    <div class="stack"><div class="card goal" id="goal">
+    <div class="stack">${S().squadJoined ? '' : `<div class="card squad-invite"><div class="say">${mascot('cheer', 48)}<div><b>Kamu belum gabung ${esc(cfg().squad)}.</b><p class="small">Gabung biar progresmu ikut dihitung di tujuan bareng.</p></div></div><button class="btn primary" data-act="squad-join" style="margin-top:10px">Gabung squad</button></div>`}
+    ${(S().prevSquads || []).length ? `<p class="small muted">Squad sebelumnya: ${S().prevSquads.map(esc).join(', ')}. Masih bisa kamu sapa kapan aja.</p>` : ''}
+    <div class="card goal" id="goal">
       ${allDone ? `<div class="celebrate-banner">${mascot('cheer', 40)} Yeay, tujuan bareng tercapai! Seluruh squad udah nyelesain 4 hari.</div>` : ''}
       <div class="goal-top"><div><div class="goal-num">${sq.done}<span class="muted" style="font-size:1.25rem"> / ${sq.total}</span></div>
         <p class="muted">anggota udah nyelesain misi harian 4 hari</p></div><span class="pill tint">${icon('clock', 16)} Sisa ${sq.daysLeft} hari minggu ini</span></div>
@@ -433,8 +451,11 @@ function viewPoints() {
 /* ------------------------------------------------------------------ PASPOR */
 function viewPassport() {
   const s = S(), info = scoreInfo(), calib = s.scoreState === 'calibrating';
-  const log = D.PASSPORT_LOG.map((l) => `<div class="item"><div><span class="tag">${l.src}</span> ${esc(l.text)}</div>
-    <span class="small muted">${l.ago} hari lalu</span></div>`).join('');
+  const outLabel = { lolos: 'Lolos', belum: 'Belum lolos', tunggu: 'Nunggu hasil' };
+  const hist = (s.history || []).map((h) => ({ src: 'Target selesai', text: `${h.label}: ${outLabel[h.outcome] || 'Selesai'}${h.score != null ? ` · Skor Siap terakhir ${h.score}` : ''}`, ago: daysBetween(fromISO(h.date), today()) }));
+  const web = s.webImported ? D.WEB_HISTORY : [];
+  const log = [...hist, ...web, ...D.PASSPORT_LOG].map((l) => `<div class="item"><div><span class="tag">${l.src}</span> ${esc(l.text)}</div>
+    <span class="small muted">${l.ago ? `${l.ago} hari lalu` : 'hari ini'}</span></div>`).join('');
   const shares = s.shares.length ? s.shares.map((sh) => `<div class="item"><div>${icon(sh.type === 'pdf' ? 'pdf' : 'link')} <b>${esc(sh.label)}</b>
     <p class="small muted">${sh.type === 'pdf' ? 'PDF' : esc(sh.url)} · berlaku sampai ${fromISO(sh.expires).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}${sh.revoked ? ' · dicabut' : ''}</p></div>
     ${sh.revoked ? '<span class="tag">Dicabut</span>' : `<button class="btn small" data-act="share-revoke" data-id="${sh.id}">Cabut akses</button>`}</div>`).join('')
@@ -463,27 +484,53 @@ function shareDialog() {
     <div class="btn-row"><button class="btn primary" id="sh-go" data-act="share-create" disabled>Buat</button><button class="btn" data-act="dlg-close">Batal</button></div>`);
 }
 
-/* ------------------------------------------------------------------ LAPOR HASIL */
-const RS = { step: 1 };
+/* ------------------------------------------------------------------ LAPOR HASIL & TUJUAN BERIKUTNYA */
+const RS = { step: 1, outcome: null };
+// Rekomendasi tujuan berikutnya per target.
+const NEXT = {
+  CPNS: [['LPDP', 'Banyak ASN lanjut S2 lewat beasiswa LPDP.'], ['IELTS', 'Bahasa Inggris kepake buat beasiswa dan karier.']],
+  UTBK: [['IELTS', 'Mulai siapin bahasa Inggris dari sekarang, bekal kuliahmu.'], ['TOEFL', 'Banyak kampus dan program minta skor TOEFL.']],
+  LPDP: [['IELTS', 'LPDP luar negeri butuh skor IELTS.'], ['TOEFL', 'Pilihan tes bahasa lain buat syarat beasiswa.']],
+  IELTS: [['LPDP', 'Skor IELTS-mu bisa langsung dipakai daftar LPDP.'], ['TOEFL', 'Beberapa kampus lebih kenal TOEFL.']],
+  TOEFL: [['LPDP', 'Skor TOEFL-mu bisa jadi syarat LPDP.'], ['IELTS', 'Buat kampus yang minta IELTS.']],
+};
+const OUT = {
+  lolos: ['proud', 'Selamat, kamu lolos!', 'Kerja kerasmu kebayar. Nyala ikut bangga banget.'],
+  belum: ['calm', 'Belum kali ini, dan itu nggak apa-apa.', 'Progresmu nggak hilang. Skor Siap, Paspor Belajar, dan Api Belajarmu tetap aman.'],
+  tunggu: ['think', 'Semoga kabarnya baik!', 'Sambil nunggu pengumuman, kamu bisa mulai siapin tujuan berikutnya.'],
+};
 function viewResult() {
-  const s = S();
-  if (RS.step === 1) return `<div class="quiz"><div class="page-head"><div><h1>Ceritain hasil ujianmu</h1><p>${esc(cfg().label)} · ${longDate(examDate())}</p></div></div>
-    <div class="card"><div class="say" style="margin-bottom:14px">${mascot('happy', 56)}<div class="bubble">Makasih udah mau cerita! Hasil aslimu bikin skornya makin pas.</div></div>
-    <div class="field"><label for="r-act">Skor resmi subtes ${cfg().subtes}-mu</label><input id="r-act" type="number" min="0" inputmode="numeric" placeholder="mis. 140"></div>
-    <div class="field"><label for="r-max">Skor maksimum subtes</label><input id="r-max" type="number" min="1" inputmode="numeric" value="${cfg().max}"></div>
-    <label class="check"><input type="checkbox" id="r-proof"><span>Simpan bukti hasil di Paspor Belajar (opsional, baru dibagikan kalau kamu setuju).</span></label>
+  const s = S(); const c = cfg();
+  if (RS.step === 1) {
+    const tiles = [['lolos', 'Lolos', 'trophy', 'Hasilnya udah keluar dan aku lolos'], ['belum', 'Belum lolos', 'heart', 'Hasilnya keluar, tapi belum kali ini'], ['tunggu', 'Belum ada hasil', 'clock', 'Masih nunggu pengumuman']]
+      .map(([v, l, ic, sub]) => `<button class="tile" data-act="res-out" data-v="${v}" aria-pressed="${RS.outcome === v}"><span class="ti">${icon(ic, 20)}</span><span>${l}<small>${sub}</small></span></button>`).join('');
+    return `<div class="quiz"><div class="page-head"><div><h1>Gimana ujianmu?</h1><p>${esc(c.label)} · ${longDate(examDate())}</p></div></div>
+    <div class="card"><div class="say" style="margin-bottom:14px">${mascot('happy', 56)}<div class="bubble">Selamat udah sampai sini! Cerita sedikit yuk, abis itu kita pilih langkah berikutnya bareng.</div></div>
+    <div class="tiles" role="group" aria-label="Hasil ujian">${tiles}</div>
+    ${RS.outcome && RS.outcome !== 'tunggu' ? `<div class="grid cols-2" style="margin-top:14px"><div class="field"><label for="r-act">Skor resmi (opsional)</label><input id="r-act" type="number" min="0" step="any" inputmode="decimal" placeholder="boleh dikosongin"></div>
+      <div class="field"><label for="r-max">Skor maksimum</label><input id="r-max" type="number" min="1" step="any" inputmode="decimal" value="${c.max}"></div></div>
+      <p class="small muted">Kalau diisi, Skor Siap-mu disesuaikan biar makin pas.</p>` : ''}
     <p id="r-err" class="small" style="color:var(--orange-strong);margin-top:8px" role="alert"></p>
-    <div class="btn-row" style="margin-top:12px"><button class="btn primary" data-act="res-submit">Kirim hasil</button><a class="btn" href="#/beranda">Nanti aja</a></div></div></div>`;
-  if (RS.step === 2) return `<div class="quiz"><div class="card done-ring">${mascot('proud', 100)}<span class="pill gold">${icon('check')} Sudah Pas</span>
-    <h1>Skormu udah disesuaikan!</h1><div class="card tint" style="width:100%;text-align:left"><p>Skor Siap terakhir: <b>${RS.last}/100</b></p><p>Hasil nyata: <b>${s.result.actual}/${s.result.max}</b> (setara <b>${s.result.pct}/100</b>)</p>
-    <p class="small muted" style="margin-top:6px">Selisih ${s.result.pct - RS.last >= 0 ? '+' : ''}${s.result.pct - RS.last} poin dipakai buat menyesuaikan cara hitung skormu.</p></div>
-    <p class="muted">${RS.got ? `+${RS.got} poin karena udah lapor hasil.` : ''}</p>
-    <button class="btn primary" data-act="res-next">Lanjut ke tujuan berikutnya</button></div></div>`;
-  return `<div class="quiz"><div class="page-head"><div><h1>Habis ini ngapain?</h1><p>Perjalanan belajarmu belum selesai. Lanjut ke tujuan baru, atau bantu yang lain.</p></div></div>
-    <div class="card"><h2>Siap-siap lagi</h2><p class="muted">Ulangi SKD dengan target baru, skormu mulai lagi dari Lagi Kenalan.</p>
-      <div class="btn-row" style="margin-top:12px"><button class="btn" data-act="res-goal">Ulangi SKD</button><button class="btn" disabled>Siapkan SKB (segera hadir)</button></div></div>
-    <div class="card"><h2>Jadi kakak mentor Kating Squad</h2><p class="muted">Alumni 18+ yang terverifikasi bisa dampingi squad dan dapat hari Premium.</p>
-    <div class="btn-row" style="margin-top:12px"><button class="btn" data-act="res-mentor" ${s.kating ? 'disabled' : ''}>${s.kating ? 'Sudah terdaftar' : 'Daftar jadi mentor'}</button><a class="btn" href="#/passport">Lihat Paspor Belajar</a></div></div></div>`;
+    <div class="btn-row" style="margin-top:12px"><button class="btn primary" data-act="res-submit" ${RS.outcome ? '' : 'disabled'}>Kirim · +100 poin</button><a class="btn" href="#/beranda">Nanti aja</a></div></div></div>`;
+  }
+  if (RS.step === 2) {
+    const [mood, title, body] = OUT[RS.outcome] || OUT.tunggu;
+    return `<div class="quiz"><div class="card done-ring">${mascot(mood, 110)}<h1>${title}</h1><p class="muted" style="max-width:42ch">${body}</p>
+    ${RS.got ? `<span class="pill gold">${icon('coin', 16)} +${RS.got} poin buat ceritanya</span>` : ''}
+    ${RS.cal ? `<div class="card tint" style="width:100%;text-align:left"><p class="small">Skor Siap terakhir <b>${RS.cal.last}/100</b> · hasil resmi setara <b>${RS.cal.pct}/100</b>. Cara hitung skormu udah disesuaikan.</p></div>` : ''}
+    <button class="btn primary xl" data-act="res-next">Mau lanjut ke mana?</button></div></div>`;
+  }
+  const opts = [...(RS.outcome !== 'lolos' ? [[s.target, `Coba lagi ${c.short} dengan rencana yang lebih matang.`]] : []), ...(NEXT[s.target] || NEXT.CPNS)];
+  const cards = opts.map(([k, why]) => { const t = D.TARGETS[k]; const p = PS.passFor(k);
+    return `<div class="card goal-pick"><span class="stat-ic">${icon(KT.TABS[k] ? KT.TABS[k].ic : 'target', 22)}</span><div><h3>${k === s.target ? 'Coba lagi ' : ''}${esc(t.label)}${t.pilot ? ' <span class="pill gold">PILOT</span>' : ''}</h3>
+      <p class="small">${esc(why)}</p><p class="small muted">Ada juga ${esc(p.name)} kalau mau jalur yang terarah.</p></div>
+      <button class="btn ${k === opts[0][0] ? 'primary' : ''}" data-act="res-goal" data-k="${k}">Pilih</button></div>`; }).join('');
+  return `<div class="quiz"><div class="page-head"><div><h1>Selamat udah sampai sini!</h1><p>Mau lanjut ke target berikutnya?</p></div></div>
+    <div class="stack">${cards}
+    <div class="card tint"><p class="small"><b>Yang ikut kebawa:</b> riwayat Skor Siap di Paspor Belajar, Api Belajar, poin, dan ${esc(c.squad)} (tetap bisa kamu kunjungi). Squad baru buat target barumu juga udah nunggu.</p></div>
+    ${RS.outcome === 'lolos' ? `<div class="card"><h2>Jadi kakak mentor Kating Squad</h2><p class="muted">Bantu adik-adik yang lagi berjuang, sambil dapat hari Premium.</p>
+      <div class="btn-row" style="margin-top:12px"><button class="btn" data-act="res-mentor" ${s.kating ? 'disabled' : ''}>${s.kating ? 'Sudah terdaftar' : 'Daftar jadi mentor'}</button></div></div>` : ''}
+    <a class="btn link" href="#/beranda" style="justify-self:start">Pilih nanti aja</a></div></div>`;
 }
 
 /* ------------------------------------------------------------------ PROFIL */
@@ -513,8 +560,17 @@ function viewProfile(params) {
     <div class="demo"><h2 style="margin-bottom:4px">Panel Demo</h2><p class="small muted" style="margin-bottom:12px">Buat nyobain berbagai keadaan layar tanpa nunggu. Cuma ada di prototipe.</p>
       <div class="label small" style="margin-bottom:6px">Keadaan skor</div><div class="seg" role="group" aria-label="Keadaan skor">${['calibrating', 'terukur', 'terkalibrasi'].map((k) => `<button data-act="demo-state" data-k="${k}" aria-pressed="${s.scoreState === k}">${stateLabel(k)}</button>`).join('')}</div>
       <div class="btn-row" style="margin-top:14px"><button class="btn small" data-act="demo-risk">${s.forceRisk ? 'Matikan' : 'Simulasikan'} Api Belajar hampir padam</button>
-      <button class="btn small" data-act="demo-exam">Simulasikan ujian udah lewat</button><button class="btn small" data-act="demo-near">Simulasikan ujian 10 hari lagi</button>
-      <button class="btn small" data-act="demo-squad">Squad selesai semua</button><button class="btn small" data-act="demo-premium">${premiumLeft() > 0 ? 'Matikan' : 'Aktifkan'} Premium</button><button class="btn small" data-act="demo-onboard">Ulangi onboarding</button><button class="btn small" data-act="demo-reset">Reset data demo</button></div></div></div>`;
+      <button class="btn small" data-act="demo-exam">Simulasikan: ujian sudah lewat</button><button class="btn small" data-act="demo-near">Simulasikan ujian 10 hari lagi</button>
+      <button class="btn small" data-act="demo-squad">Squad selesai semua</button><button class="btn small" data-act="demo-premium">${premiumLeft() > 0 ? 'Matikan' : 'Aktifkan'} Premium</button><button class="btn small" data-act="demo-onboard">Ulangi onboarding</button><button class="btn small" data-act="demo-reset">Reset data demo</button></div></div>${devPanel()}</div>`;
+}
+
+function devPanel() {
+  if (!devOn()) return '';
+  const ev = demoEvents().slice().reverse();
+  const counts = EVENTS.map((n) => `<span class="tag">${n}: ${ev.filter((e) => e.name === n).length}</span>`).join(' ');
+  return `<details class="demo"><summary><b>Data demo</b> <span class="small muted">(khusus developer)</span></summary><div class="chips" style="margin:10px 0">${counts}</div>
+    <div class="tbl-wrap"><table class="data"><thead><tr><th>Waktu</th><th>Event</th><th>Data</th></tr></thead><tbody>${ev.slice(0, 40).map((e) => `<tr><td class="small">${new Date(e.at).toLocaleTimeString('id-ID')}</td><td>${esc(e.name)}</td><td class="small">${esc(JSON.stringify(e.props))}</td></tr>`).join('') || '<tr><td colspan="3" class="muted">Belum ada event.</td></tr>'}</tbody></table></div>
+    <button class="btn small" data-act="dev-clear" style="margin-top:10px">Hapus data demo</button></details>`;
 }
 
 /* ------------------------------------------------------------------ router & render */
@@ -630,26 +686,32 @@ const ACT = {
     St.save(); render(true);
   },
   'demo-risk': () => { S().forceRisk = !S().forceRisk; St.save(); render(true); },
-  'demo-exam': () => { S().examDate = toISO(addDays(today(), -1)); St.save(); ribbon('Tanggal ujian diset kemarin. Cek Beranda.'); render(true); },
+  'demo-exam': () => { const s = S(); s.examDate = toISO(addDays(today(), -1)); s.outcomeDone = false; St.save(); RS.step = 1; RS.outcome = null; ribbon('Ujian diset kemarin. Lihat kartu di Beranda.'); location.hash = '#/beranda'; render(); },
   'demo-near': () => { S().examDate = toISO(addDays(today(), 10)); St.save(); ribbon('Ujian 10 hari lagi. Cek Beranda.'); render(true); },
   'demo-squad': () => { S().squadAllDone = true; St.save(); location.hash = '#/squad'; render(); if (checkSquadGoal()) { render(true); } setTimeout(celebrate, 150); },
   'demo-onboard': () => { St.S.onboarded = false; Object.assign(OB, { step: 0, date: '', i: 0, picked: null, wrong: [], target: 'CPNS' }); St.save(); location.hash = '#/onboarding'; render(); },
   'demo-reset': () => { resetFor({}); Q = null; applyTheme(); ribbon('Data demo direset'); location.hash = '#/beranda'; render(); },
+  'res-out': (el) => { RS.outcome = el.dataset.v; render(true); },
+  'res-out': (el) => { RS.outcome = el.dataset.v; render(true); },
   'res-submit': () => {
-    const a = parseFloat($('#r-act').value), m = parseFloat($('#r-max').value);
-    if (!(a >= 0) || !(m > 0) || a > m) { $('#r-err').textContent = 'Isi skor resminya dulu ya (nggak boleh lebih dari skor maksimum) biar bisa disesuaikan.'; return; }
-    const s = S(); RS.last = scoreInfo().score;
-    s.result = { actual: a, max: m, pct: Math.round((a / m) * 100) }; s.scoreState = 'terkalibrasi';
-    RS.got = s.resultRewarded ? 0 : addPoints(100, 'Melaporkan hasil ujian'); s.resultRewarded = true; St.save(); RS.step = 2; render();
+    const s = S(); if (!RS.outcome) return;
+    const ae = $('#r-act'), me = $('#r-max'); const a = ae && ae.value !== '' ? parseFloat(ae.value) : null; const m = me ? parseFloat(me.value) : null;
+    if (a != null && (!(a >= 0) || !(m > 0) || a > m)) { $('#r-err').textContent = 'Skornya belum pas: nggak boleh lebih dari skor maksimum. Atau kosongin aja.'; return; }
+    RS.cal = null;
+    if (a != null) { const last = scoreInfo().score; s.result = { actual: a, max: m, pct: Math.round((a / m) * 100) }; s.scoreState = 'terkalibrasi'; RS.cal = { last, pct: s.result.pct }; }
+    RS.got = s.resultRewarded ? 0 : addPoints(100, 'Cerita hasil ujian'); s.resultRewarded = true; s.outcomeDone = true; s.lastOutcome = RS.outcome;
+    track('outcome_reported', { target: s.target, outcome: RS.outcome, withScore: a != null }); St.save(); RS.step = 2; render();
   },
   'res-next': () => { RS.step = 3; render(); },
   'res-mentor': () => { S().kating = true; St.save(); ribbon('Makasih! Tim kami bakal verifikasi statusmu.'); render(true); },
-  'res-goal': () => {
-    const s = S();
-    resetFor({ target: s.target, name: s.name, points: s.points, earnedMonth: s.earnedMonth, ledger: s.ledger, age: s.age, premiumUntil: s.premiumUntil, trialClaimed: s.trialClaimed, vouchers: s.vouchers,
-      credits: s.credits, cards: s.cards, payments: s.payments, refCode: s.refCode,
-      scoreState: 'calibrating', streak: 0, bestStreak: 0, studyDates: [], userDays: 0, sessions: 0, flagged: [] });
-    RS.step = 1; Q = null; ribbon('Target baru dimulai. Skormu mulai dari Lagi Kenalan.'); location.hash = '#/beranda'; render();
+  'res-goal': (el) => {
+    const s = S(); const k = el.dataset.k; const old = cfg();
+    s.history = [{ target: s.target, label: old.label, outcome: s.lastOutcome || 'tunggu', score: s.scoreState === 'calibrating' ? null : scoreInfo().score, date: toISO(today()) }, ...(s.history || [])];
+    if (!(s.prevSquads || []).includes(old.squad)) s.prevSquads = [old.squad, ...(s.prevSquads || [])];
+    Object.assign(s, { target: k, examDate: toISO(addDays(today(), D.TARGETS[k].days)), scoreState: 'calibrating', result: null, resultRewarded: false, outcomeDone: false, lastOutcome: null,
+      pathStep: 0, flagged: [], userDays: 0, sessions: 0, squadJoined: false, joinedAt: toISO(today()), celebrated: false, squadAllDone: false });
+    track('next_goal_chosen', { from: old.short, to: k });
+    St.save(); RS.step = 1; RS.outcome = null; Q = null; ribbon(`Target baru: ${D.TARGETS[k].label}. Squad barumu udah nunggu!`); location.hash = '#/beranda'; render();
   },
 };
 const CHG = {
@@ -693,6 +755,15 @@ function tourStep(i) {
 }
 ACT['tour-next'] = (el) => { const i = +el.dataset.i; if (i >= TOUR.length) { S().toured = true; St.save(); closeDlg(); ribbon('Selamat belajar! Nyala nemenin terus.'); return; } tourStep(i); };
 ACT['tour-skip'] = () => { S().toured = true; St.save(); closeDlg(); };
+ACT['squad-join'] = () => { const s = S(); s.squadJoined = true; St.save(); track('squad_joined', { squad: cfg().squad }); ribbon(`Kamu resmi gabung ${cfg().squad}!`); render(true); };
+ACT['web-dismiss'] = () => { S().webDismissed = true; St.save(); render(true); };
+ACT['web-open'] = () => openDlg('Lanjutkan dari web', `${say('happy', 'Masuk pakai akun terang.ai yang biasa kamu pakai di web. Riwayatnya langsung masuk ke Paspor Belajar.', 56)}
+  <div class="card tint"><b>Yang ikut dibawa (contoh)</b><ul class="list-plain small" style="margin-top:6px">${D.WEB_HISTORY.map((h) => `<li>${esc(h.text)}</li>`).join('')}</ul></div>
+  <p class="small muted">Prototipe: belum tersambung ke akun web sungguhan, jadi yang masuk adalah riwayat contoh.</p>
+  <div class="btn-row"><button class="btn primary" data-act="web-import">Sambungkan (demo)</button><button class="btn" data-act="dlg-close">Batal</button></div>`);
+ACT['web-import'] = () => { const s = S(); s.webImported = true; if (s.scoreState === 'calibrating') s.sessions = Math.max(s.sessions, 2); St.save(); closeDlg(); ribbon('Riwayat web udah masuk ke Paspor Belajar!'); render(true); };
+ACT['ticket-view'] = (el) => { track('ticket_viewed', { topic: el.dataset.topic, target: S().target }); };
+ACT['dev-clear'] = () => { clearEvents(); render(true); };
 ACT['path-all'] = () => { PATH_ALL.on = !PATH_ALL.on; render(true); };
 ACT['demo-onboard'] =() => { St.S.onboarded = false; OBD.resetOnboarding(); St.save(); location.hash = '#/mulai'; render(); };
 document.addEventListener('keydown', (e) => {

@@ -3,7 +3,8 @@
 // Pass bukan sekadar Premium ganti nama: tiap pass punya jalur kesiapan bertahap dan cek kesiapan akhir.
 import { icon, mascot, say } from './icons.js';
 import * as St from './state.js';
-import { esc, today, addDays, toISO, fromISO, daysBetween } from './state.js';
+import { esc, today, addDays, toISO, fromISO, daysBetween, daysToExam } from './state.js';
+import { track } from './analytics.js';
 import { rp, openDlg, closeDlg, ribbon, hooks } from './ui.js';
 
 export const PASSES = [
@@ -66,7 +67,7 @@ export function passCard(p, rec) {
 export function recommendCard(target) {
   const p = passFor(target); const ap = activePass();
   if (ap) return `<div class="card pass-active"><div class="card-head"><h2>${icon('crown')} ${esc(ap.name)}</h2><span class="pill gold">Sisa ${ap.left} hari</span></div>
-    ${pathLine(ap, ap.step)}<a class="btn block" href="#/poin">Lihat progres pass</a></div>`;
+    ${pathLine(ap, ap.step)}${ap.left <= 7 || daysToExam() <= 0 ? `<p class="small" style="margin:6px 0">${ap.left <= 7 ? `Pass-mu tinggal ${ap.left} hari.` : 'Ujianmu udah lewat.'} Mau lanjut ke target berikutnya, atau pakai Premium Bulanan buat belajar santai?</p><div class="btn-row"><a class="btn small" href="#/lapor-hasil">Target berikutnya</a><a class="btn small" href="#/poin">Premium Bulanan</a></div>` : `<a class="btn block" href="#/poin">Lihat progres pass</a>`}</div>`;
   return `<div class="card pass-mini" style="--pc:${p.color}"><div class="say">${mascot('happy', 52)}<div><small class="muted">Rekomendasi Nyala buat targetmu</small><h3>${esc(p.name)}</h3>
     <p class="small"><b>${rp(p.price)}</b> sekali bayar · ${p.days} hari, lengkap sampai cek siap akhir.</p></div></div>
     <button class="btn block" data-act="pass-open" data-id="${p.id}" style="margin-top:10px">Lihat jalurnya</button></div>`;
@@ -95,13 +96,13 @@ export function passSection() {
 function buyBlock(price, label, act, id) {
   const s = S(); const disc = s.vouchers > 0 ? Math.round(price * 0.8 / 100) * 100 : null;
   return `${disc ? `<label class="check"><input type="checkbox" id="pv-use" checked><span>Pakai voucher 20%: jadi <b>${rp(disc)}</b></span></label>` : '<p class="small muted">Punya poin? Tukar voucher diskon di Katalog Hadiah.</p>'}
-    <p class="small muted">Pembayaran belum tersambung di prototipe ini, jadi aktivasinya demo.</p>
+    <p class="small muted">Pembayaran belum tersambung di prototipe ini, jadi ini cuma demo.</p>
     <div class="btn-row"><button class="btn primary" data-act="${act}" data-id="${id || ''}">${label}</button><button class="btn" data-act="dlg-close">Nanti dulu</button></div>`;
 }
 
 export const acts = {
   'pass-open': (el) => {
-    const p = PASSES.find((x) => x.id === el.dataset.id);
+    const p = PASSES.find((x) => x.id === el.dataset.id); track('pass_viewed', { pass: p.id });
     openDlg(esc(p.name), `${say('cheer', `<b>${rp(p.price)}</b> sekali bayar · ${p.days} hari<br><span class="small">${esc(p.value)}</span>`, 60)}
       <p class="label">Jalur kesiapanmu</p>${pathLine(p)}
       ${p.note ? `<p class="small" style="color:var(--orange-strong)">${icon('alert', 14)} ${esc(p.note)}</p>` : ''}

@@ -3,7 +3,8 @@
 import { icon, mascot, say } from './icons.js';
 import * as St from './state.js';
 import { esc, today, addDays, toISO, fromISO, longDate } from './state.js';
-import { TARGETS, BANK, DIAG_IDX, diagOf, WA_CHANNEL } from './data.js';
+import { TARGETS, BANK, DIAG_IDX, diagOf, bankOf, WA_CHANNEL } from './data.js';
+import { track } from './analytics.js';
 import { ringSVG } from './charts.js';
 import { $, $$, hooks } from './ui.js';
 import * as DEMO from './demo.js';
@@ -67,8 +68,8 @@ export function viewLanding() {
 
 /* ------------------------------------------------------------------ ONBOARDING */
 const QS = {
-  name: { ask: () => 'Hai! Aku <b>Nyala</b>, teman belajarmu di Terang AI. Boleh tau nama panggilanmu?', type: 'text', optional: true },
-  goal: { ask: (a) => `Salam kenal${a.name ? ', ' + esc(a.name) : ''}! Lagi siap-siap buat apa?`, opts: [['CPNS', 'CPNS', 'building', 'SKD: TWK, TIU, TKP'], ['UTBK', 'UTBK-SNBT', 'book', 'Masuk PTN impian'], ['LPDP', 'LPDP', 'grad', 'Beasiswa S2/S3'], ['IELTS', 'IELTS', 'book', 'Pilot · studi & kerja di luar negeri'], ['TOEFL', 'TOEFL', 'chat', 'Pilot · syarat kampus & beasiswa'], ['UMUM', 'Belajar umum aja', 'sparkle', 'Mapel, kuliah, kerja']] },
+  name: { ask: () => `Mantap, 3 soal pertama beres${OB.t.right ? ` (${OB.t.right} benar)` : ''}! Simpan progresmu yuk. Siapa nama panggilanmu?`, type: 'text', optional: true, cta: 'Simpan progres' },
+  goal: { ask: () => 'Hai! Aku <b>Nyala</b>, teman belajarmu di Terang AI. Kamu lagi siap-siap buat apa?', note: '<button class="btn link small" data-act="ob-web" style="padding:0">Pernah latihan di terang.ai versi web? Lanjutkan dari web</button>', opts: [['CPNS', 'CPNS', 'building', 'SKD: TWK, TIU, TKP'], ['UTBK', 'UTBK-SNBT', 'book', 'Masuk PTN impian'], ['LPDP', 'LPDP', 'grad', 'Beasiswa S2/S3'], ['IELTS', 'IELTS', 'book', 'Pilot · studi & kerja di luar negeri'], ['TOEFL', 'TOEFL', 'chat', 'Pilot · syarat kampus & beasiswa'], ['UMUM', 'Belajar umum aja', 'sparkle', 'Mapel, kuliah, kerja']] },
   status: { ask: () => 'Sekarang kamu lagi…', opts: [['sma', 'Pelajar SMA/SMK', 'book'], ['mhs', 'Mahasiswa', 'grad'], ['fresh', 'Fresh graduate', 'star'], ['kerja', 'Sudah bekerja', 'building']] },
   age: { ask: () => 'Biar fiturnya pas, usiamu berapa?', note: 'Fitur sosial dibuka bertahap sesuai usia, demi keamananmu.', opts: [['u16', 'Di bawah 16', 'user'], ['16-17', '16–17 tahun', 'user'], ['18+', '18 tahun ke atas', 'user']] },
   date: { ask: () => 'Kapan ujianmu?', type: 'date' },
@@ -82,9 +83,11 @@ export function resetOnboarding(goal) {
   OB.i = 0;
   OB.a = { name: '', goal: goal || null, status: null, age: null, date: '', dateUnknown: false, daily: null, time: null, source: null };
   OB.d = { i: 0, picked: null, wrong: [], right: 0 };
+  OB.t = { i: 0, picked: null, right: 0 }; OB.t0 = Date.now();
 }
 resetOnboarding();
-const steps = () => ['name', 'goal', 'status', 'age', ...(OB.a.goal === 'UMUM' ? [] : ['date']), 'daily', 'time', 'source', 'pre', 'diag', 'result'];
+const steps = () => ['goal', 'try', 'name', 'status', 'age', ...(OB.a.goal === 'UMUM' ? [] : ['date']), 'daily', 'time', 'source', 'pre', 'diag', 'result'];
+const tryQs = () => { const b = bankOf(OB.a.goal && TARGETS[OB.a.goal] ? OB.a.goal : 'CPNS'); return b.slice(6, 9); };
 const diagQs = () => diagOf(OB.a.goal && TARGETS[OB.a.goal] ? OB.a.goal : 'CPNS');
 const answered = (k) => {
   const a = OB.a;
@@ -107,11 +110,21 @@ export function viewOnboarding() {
       <div class="tiles"><button class="tile" data-act="ob-unknown" aria-pressed="${a.dateUnknown}"><span class="ti">${icon('clock', 20)}</span><span>Belum tau<small>Nanti kami kasih perkiraan</small></span></button></div>`;
     else body = `<div class="tiles" role="group">${q.opts.map(([v, l, ic, sub]) => `<button class="tile" data-act="ob-pick" data-k="${k}" data-v="${v}" aria-pressed="${a[k] === v}"><span class="ti">${icon(ic, 20)}</span><span>${l}${sub ? `<small>${sub}</small>` : ''}</span></button>`).join('')}</div>`;
     return `<div class="ob">${top()}<div class="ob-body"><div class="ob-ask">${mascot(OB.i === 0 ? 'cheer' : 'happy', 96)}<div class="bubble">${q.ask(a)}</div></div>
-      ${q.note ? `<p class="small muted" style="margin:-8px 0 14px">${q.note}</p>` : ''}${body}</div>${foot('Lanjut', answered(k), q.optional)}</div>`;
+      ${q.note ? `<p class="small muted" style="margin:-8px 0 14px">${q.note}</p>` : ''}${body}</div>${foot(q.cta || 'Lanjut', answered(k), q.optional)}</div>`;
+  }
+  if (k === 'try') {
+    const qs = tryQs(); const d = OB.t; const q = qs[d.i]; const ok = d.picked === q.a;
+    const opts = q.o.map((o, i) => {
+      const cls = d.picked == null ? '' : i === q.a ? ' right' : i === d.picked ? ' wrong' : '';
+      return `<button class="opt${cls}" data-act="ob-tpick" data-i="${i}" ${d.picked != null ? 'disabled' : ''}><span class="key">${i + 1}</span><span>${esc(o)}</span></button>`;
+    }).join('');
+    const sheet = d.picked == null ? '' : `<div class="sheet ${ok ? 'ok' : 'no'}" role="status"><div class="sheet-in"><div class="sheet-msg">${mascot(ok ? 'cheer' : 'think', 56)}<div><h3>${ok ? 'Tepat!' : 'Hampir!'}</h3><p class="small">${esc(q.e)}</p></div></div>
+      <button class="btn primary" data-act="ob-tnext">${d.i === qs.length - 1 ? 'Simpan progres' : 'Lanjut'}</button></div></div>`;
+    return `<div class="ob">${top()}<div class="ob-body" style="padding-bottom:200px"><span class="qz-label">Coba dulu · soal ${d.i + 1} dari 3 · tanpa daftar</span>${q.p ? `<p class="passage">${esc(q.p)}</p>` : ''}<h2 class="qz-q">${esc(q.q)}</h2>${opts}</div>${sheet}</div>`;
   }
   if (k === 'pre') {
     return `<div class="ob">${top()}<div class="ob-body" style="display:grid;place-items:center;text-align:center;gap:14px">${mascot('cheer', 150)}
-      <h1>Oke${OB.a.name ? ', ' + esc(OB.a.name) : ''}! Rencanamu hampir siap.</h1><p class="muted" style="max-width:44ch">Sekarang cek posisimu dulu: 5 soal, sekitar 5 menit. Santai, ini bukan ujian. Salah juga nggak apa-apa.</p></div>
+      <h1>Oke${OB.a.name ? ', ' + esc(OB.a.name) : ''}! Rencanamu hampir siap.</h1><p class="muted" style="max-width:44ch">Sekarang cek posisimu: 5 soal, sekitar 5 menit. Santai, ini bukan ujian. Salah juga nggak apa-apa.</p><p class="try-cue">Sedikit lagi, skor pertamamu muncul.</p></div>
       <div class="ob-foot"><button class="btn" data-act="ob-skipdiag">Nanti aja</button><button class="btn primary xl" data-act="ob-next">Gas, mulai</button></div></div>`;
   }
   if (k === 'diag') {
@@ -122,13 +135,14 @@ export function viewOnboarding() {
     }).join('');
     const sheet = d.picked == null ? '' : `<div class="sheet ${ok ? 'ok' : 'no'}" role="status"><div class="sheet-in"><div class="sheet-msg">${mascot(ok ? 'cheer' : 'think', 56)}<div><h3>${ok ? 'Tepat!' : 'Belum pas, santai aja.'}</h3><p class="small">${esc(q.e)}</p></div></div>
       <button class="btn primary" data-act="ob-dnext">${d.i === qs.length - 1 ? 'Lihat hasil' : 'Lanjut'}</button></div></div>`;
-    return `<div class="ob"><div class="ob-top"><a class="qz-x" href="#/mulai" aria-label="Tutup">${icon('close', 22)}</a><div class="bar"><i style="width:${((d.i + (d.picked != null ? 1 : 0)) / qs.length) * 100}%"></i></div><span class="small muted">${d.i + 1}/${qs.length}</span></div>
+    return `<div class="ob"><div class="ob-top"><a class="qz-x" href="#/mulai" aria-label="Tutup">${icon('close', 22)}</a><div class="bar"><i style="width:${((d.i + (d.picked != null ? 1 : 0)) / qs.length) * 100}%"></i></div><span class="small muted">${d.i + 1}/${qs.length}</span></div><p class="try-cue">${d.i >= qs.length - 2 ? 'Sedikit lagi, skor pertamamu muncul!' : 'Cek posisi · sekitar 5 menit'}</p>
       <div class="ob-body" style="padding-bottom:200px"><span class="qz-label">Cek posisi · ${esc(q.topic)}</span>${q.p ? `<p class="passage">${esc(q.p)}</p>` : ''}<h2 class="qz-q">${esc(q.q)}</h2>${opts}<p class="qz-hint">Tips: tekan 1–4 di keyboard.</p></div>${sheet}</div>`;
   }
   // result
   const a = OB.a; const target = a.goal && a.goal !== 'UMUM' ? a.goal : null;
   const date = target ? (a.date && !a.dateUnknown ? fromISO(a.date) : addDays(today(), TARGETS[target].days)) : null;
-  const wrong = [...new Set(OB.d.wrong)];
+  const wrong = [...new Set(OB.d.wrong)]; const weak = weakest();
+  if (!OB.scored) { OB.scored = true; track('first_score_time', { seconds: Math.round((Date.now() - OB.t0) / 1000), target: a.goal }); }
   const rows = [
     ['Target', target ? TARGETS[target].label : 'Belajar umum'],
     ...(date ? [['Ujian', `${longDate(date)}${a.dateUnknown || !a.date ? ' (perkiraan)' : ''}`]] : []),
@@ -141,9 +155,14 @@ export function viewOnboarding() {
     ${wrong.length ? `<p class="small">Yang perlu diasah duluan: <b>${wrong.map(esc).join(', ')}</b></p>` : ''}
     <div class="ob-sum">${rows.map(([l, v]) => `<div><span>${l}</span><b>${esc(v)}</b></div>`).join('')}</div>
     ${target ? `<div class="ob-rec"><small>Rekomendasi Nyala setelah cek posisi</small><b>${esc(passFor(target).name)}</b><span class="small">Rp${passFor(target).price.toLocaleString('id-ID')} sekali bayar · ${passFor(target).days} hari, dari diagnostik sampai cek siap akhir. Bisa diambil nanti di Poin & Jurus.</span></div>` : ''}</div>
-    <div class="ob-foot"><span></span><button class="btn primary xl" data-act="ob-finish">Mulai belajar</button></div></div>`;
+    ${target ? `<div class="ob-sum"><div><span>Misi Harian pertamamu</span><b>Fokus ke ${esc(weak)}</b></div></div>` : ''}</div>
+    <div class="ob-foot"><span></span><button class="btn primary xl" data-act="ob-finish">${target ? 'Mulai Misi Harian pertama' : 'Mulai belajar'}</button></div></div>`;
 }
 
+function weakest() {
+  const all = [...OB.d.wrong, ...(OB.t.wrong || [])]; if (!all.length) { const tg = TARGETS[OB.a.goal]; return tg && tg.topics ? tg.topics[0][0] : 'Deret Angka'; }
+  const n = {}; all.forEach((x) => { n[x] = (n[x] || 0) + 1; }); return Object.keys(n).sort((x, y) => n[y] - n[x])[0];
+}
 function finish() {
   const a = OB.a; const old = St.S;
   const target = a.goal && a.goal !== 'UMUM' ? a.goal : 'CPNS';
@@ -152,10 +171,12 @@ function finish() {
     examDate: a.date && !a.dateUnknown ? a.date : toISO(addDays(today(), TARGETS[target].days)),
     age: a.age || '18+', reminderHour: +(a.time || 19), dailyMin: +(a.daily || 30), status: a.status, source: a.source, general: a.goal === 'UMUM',
     scoreState: 'calibrating', streak: 0, bestStreak: 0, studyDates: [], userDays: 0, sessions: 0, points: 0, earnedMonth: 0, ledger: [],
-    flagged: [...new Set(OB.d.wrong)], pathStep: 0, toured: false,
+    flagged: [weakest(), ...new Set([...OB.d.wrong, ...(OB.t.wrong || [])])].filter((x, i, arr) => arr.indexOf(x) === i), pathStep: 0, toured: false,
+    squadJoined: false, joinedAt: toISO(today()), webImported: !!OB.a.web, history: [], prevSquads: [],
   }));
   St.addPoints(10, 'Cek posisi selesai'); St.save();
-  location.hash = a.goal === 'UMUM' ? '#/profil?tab=eksplor' : '#/beranda';
+  track('diagnostic_completed', { target, right: OB.d.right });
+  location.hash = a.goal === 'UMUM' ? '#/profil?tab=eksplor' : `#/daily?topic=${encodeURIComponent(weakest())}`;
 }
 
 export const acts = {
@@ -173,6 +194,9 @@ export const acts = {
   'ob-pick': (el) => { OB.a[el.dataset.k] = el.dataset.v; hooks.render(true); },
   'ob-unknown': () => { OB.a.dateUnknown = !OB.a.dateUnknown; if (OB.a.dateUnknown) OB.a.date = ''; hooks.render(true); },
   'ob-next': () => { const nm = $('#ob-name'); if (nm) OB.a.name = nm.value.trim(); if (!answered(steps()[OB.i])) return; OB.i += 1; hooks.render(); },
+  'ob-web': () => { OB.a.web = true; const b = document.querySelector('[data-act="ob-web"]'); if (b) b.textContent = 'Siap! Riwayat web-mu bakal disambungin setelah progres disimpan.'; },
+  'ob-tpick': (el) => { const d = OB.t; if (d.picked != null) return; const q = tryQs()[d.i]; d.picked = +el.dataset.i; if (d.picked === q.a) d.right += 1; else (d.wrong = d.wrong || []).push(q.topic); hooks.render(true); },
+  'ob-tnext': () => { const d = OB.t; if (d.i === 2) OB.i += 1; else { d.i += 1; d.picked = null; } hooks.render(); },
   'ob-skip': () => { OB.i += 1; hooks.render(); },
   'ob-back': () => { OB.i = Math.max(0, OB.i - 1); hooks.render(); },
   'ob-skipdiag': () => { OB.i = steps().indexOf('result'); hooks.render(); },
@@ -191,6 +215,10 @@ export const changes = {
 export function onKey(e) {
   // Tombol 1–4 untuk menjawab cek posisi; Enter untuk lanjut.
   const k = steps()[OB.i];
+  if (k === 'try') {
+    if (/^[1-4]$/.test(e.key) && OB.t.picked == null) { const b = $(`[data-act="ob-tpick"][data-i="${+e.key - 1}"]`); if (b) b.click(); }
+    else if (e.key === 'Enter' && OB.t.picked != null) { e.preventDefault(); acts['ob-tnext'](); }
+  }
   if (k === 'diag') {
     if (/^[1-4]$/.test(e.key) && OB.d.picked == null) { const b = $(`[data-act="ob-dpick"][data-i="${+e.key - 1}"]`); if (b) b.click(); }
     else if (e.key === 'Enter' && OB.d.picked != null) { e.preventDefault(); acts['ob-dnext'](); }

@@ -21,6 +21,13 @@ Buka di laptop atau HP. Pertama kali dibuka akan muncul landing page; pilih "Mul
 
 Target baru IELTS Academic dan TOEFL iBT dengan **English Lab**: Reading Test dan Writing Test gratis, **Listening suara asli** dan **Speaking bareng Professor Terra** khusus Premium (suara memakai text-to-speech bawaan browser, belum ada perekaman atau penilaian suara), insight alumni, dan Kartu Ujian IELTS/TOEFL.
 
+## Alur demo singkat
+
+- **Setelah ujian:** Profil → Panel Demo → "Simulasikan: ujian sudah lewat" → kartu di Beranda → pilih hasil (lolos / belum / belum ada hasil) → +100 poin → pilih target berikutnya. Riwayat Skor Siap, Paspor Belajar, Api Belajar, poin, dan squad lama ikut terbawa; squad baru ditawarkan.
+- **Sesi pertama:** pilih target → coba 3 soal tanpa daftar → simpan progres → cek posisi 5 soal → Skor Siap "Lagi Kenalan" → Misi Harian pertama langsung fokus ke topik terlemah, lengkap dengan alasannya.
+- **Dari web:** "Lanjutkan dari web" di onboarding atau Beranda membawa riwayat contoh ke Paspor Belajar. Minggu pertama ada undangan gabung squad.
+- **Data demo (developer):** buka dengan `?dev=1` untuk melihat panel event di Profil. Tidak tampil untuk pengguna biasa.
+
 ## Alur pertama kali
 
 Saat pertama dibuka (belum ada data di browser), aplikasi menampilkan **landing page** (`#/mulai`). "Mulai gratis" membuka **onboarding** satu pertanyaan per layar: nama panggilan, tujuan (CPNS/UTBK/LPDP/belajar umum), status, usia, tanggal ujian, durasi belajar harian, jam belajar, dan sumber info. Setelah itu ada cek posisi 5 soal dan ringkasan rencana. "Lihat dashboard contoh" langsung masuk dengan data demo.

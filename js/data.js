@@ -100,6 +100,11 @@ export const PLAYBOOKS = [
   },
 ];
 
+export const WEB_HISTORY = [
+  { src: 'Web', text: 'Tryout TBS LPDP (web): 212 dari 300', ago: 40 },
+  { src: 'Web', text: 'Latihan soal di web, 12 sesi', ago: 21 },
+  { src: 'Web', text: 'AI Interview di web, 2 sesi', ago: 18 },
+];
 export const PASSPORT_LOG = [
   { src: 'Web', text: 'Diagnostik pertama diselesaikan', ago: 56 },
   { src: 'Aplikasi', text: 'Misi harian selesai, 24 kali dalam 8 minggu', ago: 3 },
