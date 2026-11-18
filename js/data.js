@@ -58,16 +58,9 @@ export const CATALOG = [
   { id: 'p1', name: 'Premium 1 Hari', cost: 300, days: 1, desc: 'Tambah satu hari akses penuh, cocok buat maraton latihan.' },
   { id: 'p3', name: 'Premium 3 Hari', cost: 800, days: 3, desc: 'Lebih hemat dibanding beli per hari. Pas buat sprint sebelum ujian.' },
   { id: 'room', name: 'Slot Ruang Belajar Hening 2 Jam', cost: 150, desc: 'Perpanjang sesi dari 25 menit jadi 2 jam non-stop.' },
-  { id: 'voucher', name: 'Voucher Diskon Paket 20% (contoh)', cost: 500, voucher: true, desc: 'Potongan buat pembelian paket Premium. Nilai dan syarat belum final.' },
+  { id: 'voucher', name: 'Voucher Diskon Pass 20% (contoh)', cost: 500, voucher: true, desc: 'Potongan buat Pass Ujian atau Premium Bulanan. Nilai dan syarat belum final.' },
 ];
 
-// Paket berbayar. Harga di bawah hanya CONTOH, belum ditetapkan tim produk.
-export const PLANS = [
-  { id: 'm1', name: '1 Bulan', months: 1, price: 59000, note: 'Cocok buat nyoba dulu.' },
-  { id: 'm3', name: '3 Bulan', months: 3, price: 149000, popular: true, note: 'Pas banget buat persiapan SKD, durasinya sama kayak masa belajar ideal.' },
-  { id: 'm6', name: '6 Bulan', months: 6, price: 269000, note: 'Buat yang mau nyiapin matang atau ikut seleksi lebih dari sekali.' },
-];
-export const PLAN_FEATURES = ['Latihan soal tanpa batas', 'Rapor Mingguan lengkap', 'Pembahasan AI tanpa batas', 'Ruang Belajar Hening sesi panjang'];
 
 export const EARN_RULES = [
   ['Menyelesaikan Misi Harian', '+20'],

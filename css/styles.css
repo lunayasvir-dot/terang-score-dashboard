@@ -716,3 +716,26 @@ em.new { animation: badge-pulse 2s ease-in-out infinite; }
 .skill .wave { height: 48px; margin: 8px 0; }
 .skill .dm-opts { margin-bottom: 4px; }
 .l-stage .mascot-btn { position: static; }
+
+/* ---------- Pass Ujian ---------- */
+.pass-hero h2 { font-size: clamp(1.3rem, 2.6vw, 1.75rem); margin: 4px 0; }
+.passes { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
+.pass { position: relative; display: grid; gap: 8px; align-content: start; background: var(--surface); border: 2px solid var(--line); border-top: 8px solid var(--pc); border-bottom-width: 5px; border-radius: 22px; padding: 18px; }
+.pass.rec { box-shadow: 0 0 0 3px var(--blue-strong) inset; }
+.pass .flag { position: absolute; top: -14px; right: 14px; background: var(--gold); color: #111418; font-weight: 900; font-size: .75rem; padding: 3px 10px; border-radius: 999px; }
+.pass-top { display: flex; gap: 10px; align-items: center; } .pass-top small { color: var(--text-2); font-weight: 800; } .pass-top h3 { font-size: 1.125rem; line-height: 1.2; }
+.pass-ic { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: var(--pc); color: #111418; flex: none; }
+.pass-price { font-size: 1.6rem; font-weight: 900; line-height: 1.1; } .pass-price small { font-size: .8125rem; font-weight: 700; color: var(--text-2); }
+.pp { list-style: none; margin: 4px 0; padding: 0; display: grid; gap: 0; }
+.pp li { position: relative; display: flex; gap: 10px; align-items: center; padding: 5px 0; font-size: .875rem; font-weight: 700; }
+.pp li:not(:last-child)::after { content: ""; position: absolute; left: 14px; top: 30px; height: 12px; border-left: 2px dotted var(--line-strong); }
+.pp-ic { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); color: var(--blue-strong); flex: none; border: 2px solid var(--line); }
+.pp li.done .pp-ic { background: var(--gold); color: #111418; border-color: var(--gold); }
+.pp li.cur .pp-ic { background: var(--blue); color: #111418; border-color: var(--blue); }
+.pass-mini h3 { font-size: 1.05rem; } .pass-mini small { font-weight: 700; }
+.regular { border-style: dashed; }
+.tbl-wrap { overflow-x: auto; }
+table.cmp th[scope="row"] { color: var(--text-2); font-weight: 700; white-space: nowrap; }
+table.cmp td, table.cmp th { font-size: .875rem; }
+.ob-rec { display: grid; gap: 4px; text-align: left; width: 100%; padding: 12px 14px; border-radius: 14px; border: 2px dashed var(--gold); background: color-mix(in srgb, var(--gold) 12%, var(--surface)); }
+.ob-rec small { font-weight: 800; color: var(--orange-strong); }

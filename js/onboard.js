@@ -7,6 +7,7 @@ import { TARGETS, BANK, DIAG_IDX, diagOf, WA_CHANNEL } from './data.js';
 import { ringSVG } from './charts.js';
 import { $, $$, hooks } from './ui.js';
 import * as DEMO from './demo.js';
+import { passFor } from './pass.js';
 
 /* ------------------------------------------------------------------ LANDING */
 export function viewLanding() {
@@ -138,7 +139,8 @@ export function viewOnboarding() {
     <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center">${mascot('proud', 96)}<div class="ring-sm">${ringSVG({ mode: 'calibrating' })}</div></div>
     <h1>Rencanamu udah siap!</h1><p class="muted" style="max-width:46ch">Skor Siap-mu masih Lagi Kenalan. Makin sering latihan, makin akurat. ${OB.d.right ? `Tadi kamu benar ${OB.d.right} dari ${diagQs().length}.` : ''}</p>
     ${wrong.length ? `<p class="small">Yang perlu diasah duluan: <b>${wrong.map(esc).join(', ')}</b></p>` : ''}
-    <div class="ob-sum">${rows.map(([l, v]) => `<div><span>${l}</span><b>${esc(v)}</b></div>`).join('')}</div></div>
+    <div class="ob-sum">${rows.map(([l, v]) => `<div><span>${l}</span><b>${esc(v)}</b></div>`).join('')}</div>
+    ${target ? `<div class="ob-rec"><small>Rekomendasi Nyala setelah cek posisi</small><b>${esc(passFor(target).name)}</b><span class="small">Rp${passFor(target).price.toLocaleString('id-ID')} sekali bayar · ${passFor(target).days} hari, dari diagnostik sampai cek siap akhir. Bisa diambil nanti di Poin & Jurus.</span></div>` : ''}</div>
     <div class="ob-foot"><span></span><button class="btn primary xl" data-act="ob-finish">Mulai belajar</button></div></div>`;
 }
 

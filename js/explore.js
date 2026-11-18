@@ -68,7 +68,7 @@ export function claimTrial() {
 export function lockDialog(id) {
   const f = PREMIUM_FEATURES.find((x) => x.id === id) || { name: 'Fitur Premium', desc: 'Fitur ini khusus pengguna Premium.' };
   openDlg(`${icon('lock', 20)} ${esc(f.name)}`, `${say('cheer', `<b>Wah, ini khusus Premium.</b><br>${esc(f.desc)}`, 64)}
-    <p class="small muted">Premium mulai Rp59.000/bulan (harga contoh, belum final). Kamu juga bisa dapetin akses lewat poin.</p>
+    <p class="small muted">Bisa lewat Pass Ujian sekali bayar (mulai Rp49.000) atau Premium Bulanan Rp25.000 (harga hipotesis). Poin juga bisa ditukar hari Premium.</p>
     <div class="btn-row">${St.S.trialClaimed
     ? '<a class="btn primary" href="#/poin" data-act="dlg-close">Lihat paket Premium</a>'
     : '<button class="btn primary" data-act="claim-trial">Coba gratis 7 hari</button><a class="btn" href="#/poin" data-act="dlg-close">Lihat paket</a>'}</div>

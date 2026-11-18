@@ -56,7 +56,7 @@ Fitur **Premium** (ngobrol bareng alumni, Voice Channel, kelas live, AI Intervie
 
 - **Semua angka dan konten adalah data ilustrasi.** Jawaban Tanya AI adalah teks contoh; penilaian AI Interview dan Review Dokumen memakai aturan sederhana (hitung kata, kalimat, dll), **bukan AI sungguhan**.
 - Materi latihan contoh adalah soal penalaran (verbal, numerik, logika) gaya TIU. Target UTBK dan LPDP memakai materi yang sama, dengan label subtes TPS dan TBS.
-- **Harga paket Premium (Rp59.000 / Rp149.000 / Rp269.000) hanya contoh.** Nama paket kartu selain "(Gratis)" dan "Ambis 2026 #n", serta durasi UTBK dan CPNS, juga contoh. Rp0 dan Rp15.000 mengikuti halaman Ujian Tersedia. Pembayaran belum tersambung.
+- **Harga Pass Ujian (LPDP Rp49.000/30 hari, CPNS Rp69.000/60 hari, UTBK Rp89.000/90 hari, IELTS & TOEFL Rp99.000/60 hari, sekali bayar) dan Premium Bulanan Rp25.000 adalah hipotesis uji pasar.** Nama paket kartu selain "(Gratis)" dan "Ambis 2026 #n", serta durasi UTBK dan CPNS, juga contoh. Rp0 dan Rp15.000 mengikuti halaman Ujian Tersedia. Pembayaran belum tersambung.
 - Alumni (`#TerangiBersamaJerome`, Alya, Raka) dan semua tanya-jawab mereka fiktif.
 - Ambang pita status (Di Jalur ≥ 75, Dikit Lagi ≥ 60) dan ambang Lagi Kenalan → Terukur (3 misi harian) adalah nilai sementara; keduanya pertanyaan terbuka untuk tim data.
 - Maskot adalah rancangan orisinal terinspirasi logo Terang AI. Ganti `mascot()` di `js/icons.js` dengan aset resmi bila ada.

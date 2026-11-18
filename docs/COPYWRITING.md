@@ -42,7 +42,7 @@ Nama fitur AI mengikuti produk yang sudah ada: Tanya AI, AI Interview, Review Do
 | Teman belajar sudah selesai | Bella udah beres nih | Giliran kamu. Tos virtual nunggu di ujung misi. |
 | Ujian 7 hari lagi | Seminggu lagi, kamu siap! | Latihan ringan hari ini, istirahat cukup nanti malam. |
 | Setelah ujian | Gimana tadi? | Cerita ke kita yuk. Skormu bisa makin pas, kamu juga dapet 100 poin. |
-| Trial Premium hampir habis | Premium-mu tinggal 2 hari | Puas-puasin dulu. Kalau mau lanjut, ada paket mulai Rp59.000. |
+| Trial Premium hampir habis | Premium-mu tinggal 2 hari | Puas-puasin dulu. Mau lanjut? Ada Pass Ujian sekali bayar, mulai Rp49.000. |
 
 ## Momen berkesan
 
@@ -53,6 +53,6 @@ Nama fitur AI mengikuti produk yang sudah ada: Tanya AI, AI Interview, Review Do
 
 ## Yang perlu dicek sebelum rilis
 
-- Harga yang disebut di pengingat (Rp59.000) adalah contoh dan harus mengikuti harga final.
+- Harga yang disebut di pengingat (Rp49.000, Rp25.000) adalah contoh dan harus mengikuti harga final.
 - Pengingat WhatsApp hanya untuk pengguna dewasa; pengguna di bawah 18 hanya menerima notifikasi dalam aplikasi.
 - Pengguna harus bisa mengatur jam dan kanal pengingat (sudah ada di Profil).

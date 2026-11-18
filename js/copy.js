@@ -64,7 +64,7 @@ export function notifications() {
   if (d > 0 && d <= 14) list.push({ id: 'near', ic: 'alert', title: `Ujian tinggal ${d} hari`, body: `Pelan tapi pasti. Kita rapihin ${esc(info.weak.name)} bareng-bareng ya.`, href: `#/daily?topic=${encodeURIComponent(info.weak.name)}`, cta: 'Asah topiknya' });
   if (d <= 0 && d >= -7 && s.scoreState !== 'terkalibrasi') list.push({ id: 'result', ic: 'trophy', title: 'Gimana ujiannya?', body: 'Cerita ke kita dong. Hasilnya bikin skormu makin pas, plus kamu dapet 100 poin.', href: '#/lapor-hasil', cta: 'Ceritain hasilnya' });
   if (left === 0 && !s.trialClaimed) list.push({ id: 'trial', ic: 'crown', title: 'Ada hadiah buat kamu', body: 'Premium 7 hari, gratis. Tanpa kartu, tanpa ribet. Tinggal klaim.', href: '#/poin', cta: 'Klaim sekarang' });
-  if (left > 0 && left <= 2) list.push({ id: 'trialend', ic: 'crown', title: `Premium-mu tinggal ${left} hari`, body: 'Manfaatin dulu semuanya. Kalau cocok, ada paket mulai Rp59.000.', href: '#/poin', cta: 'Lihat paket' });
+  if (left > 0 && left <= 2) list.push({ id: 'trialend', ic: 'crown', title: `Premium-mu tinggal ${left} hari`, body: 'Manfaatin dulu semuanya. Kalau cocok, lanjut pakai Pass Ujian sekali bayar atau Premium Bulanan Rp25.000.', href: '#/poin', cta: 'Lihat paket' });
   list.push({ id: 'squad', ic: 'users', title: `${sq.done} dari ${sq.total} udah 4 hari`, body: 'Dikit lagi squad kita tuntas. Yuk bantu ngegas.', href: '#/squad', cta: 'Cek squad' });
   list.push({ id: 'newai', ic: 'sparkle', title: 'Baru: AI Interview & Review Dokumen', body: 'Latihan wawancara dan cek esai kapan aja, tanpa deg-degan.', href: '#/interview', cta: 'Coba dulu' });
   return list;
@@ -77,5 +77,5 @@ export const REMINDERS = [
   { when: 'Teman belajar sudah selesai', title: 'Bella udah beres nih', body: 'Giliran kamu. Tos virtual nunggu di ujung misi.' },
   { when: 'Ujian 7 hari lagi', title: 'Seminggu lagi, kamu siap!', body: 'Latihan ringan hari ini, istirahat cukup nanti malam.' },
   { when: 'Setelah ujian', title: 'Gimana tadi?', body: 'Cerita ke kita yuk. Skormu bisa makin pas, kamu juga dapet 100 poin.' },
-  { when: 'Trial Premium hampir habis', title: 'Premium-mu tinggal 2 hari', body: 'Puas-puasin dulu. Kalau mau lanjut, ada paket mulai Rp59.000.' },
+  { when: 'Trial Premium hampir habis', title: 'Premium-mu tinggal 2 hari', body: 'Puas-puasin dulu. Mau lanjut? Ada Pass Ujian sekali bayar, mulai Rp49.000.' },
 ];

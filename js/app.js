@@ -12,6 +12,7 @@ import * as KT from './kartu.js';
 import * as EX from './explore.js';
 import * as OBD from './onboard.js';
 import * as EN from './english.js';
+import * as PS from './pass.js';
 
 const S = () => St.S;
 
@@ -184,7 +185,7 @@ function viewHome() {
   const radar = `<div class="card"><div class="card-head"><h2>Radar Skill</h2><span class="pill tint">${icon('target', 16)} ${c.subtes}</span></div>${gapRows()}</div>`;
   return `<div class="stack">${hero}${quickLinks()}${warn}${report}
     <div class="home-layout"><div class="stack">${path}</div>
-    <div class="side-col">${ring}${daily}${streak}${radar}${squadCard}${teaser}</div></div></div>`;
+    <div class="side-col">${ring}${PS.recommendCard(S().target)}${daily}${streak}${radar}${squadCard}${teaser}</div></div></div>`;
 }
 
 /* ------------------------------------------------------------------ RAPOR MINGGUAN */
@@ -400,10 +401,6 @@ function celebrate() {
 }
 
 /* ------------------------------------------------------------------ POIN & JURUS */
-const planPrice = (p) => {
-  const base = 59000 * p.months; const save = Math.round((1 - p.price / base) * 100);
-  return { perMonth: Math.round(p.price / p.months / 100) * 100, save };
-};
 function viewPoints() {
   const s = S(); const left = premiumLeft();
   const premium = left > 0
@@ -415,13 +412,6 @@ function viewPoints() {
     return `<div class="item"><div><b>${esc(it.name)}</b>${it.once ? ' <span class="tag">Sekali per akun</span>' : ''}<p class="small muted">${esc(it.desc)}</p></div>
     <button class="btn small${it.cost === 0 && !claimed ? ' primary' : ''}" data-act="redeem" data-id="${it.id}" ${claimed || s.points < it.cost ? 'disabled' : ''}>${label}</button></div>`;
   }).join('');
-  const plans = D.PLANS.map((p) => {
-    const { perMonth, save } = planPrice(p);
-    return `<div class="plan${p.popular ? ' popular' : ''}">${p.popular ? '<span class="flag">Paling populer</span>' : ''}
-      <h3>${icon('crown', 18)} ${p.name}</h3><div class="price">${rp(p.price)}</div>
-      <p class="small muted">${p.months > 1 ? `≈ ${rp(perMonth)}/bulan · hemat ${save}%` : 'Bayar per bulan'}</p><p class="small">${esc(p.note)}</p>
-      <button class="btn${p.popular ? ' primary' : ''} block" data-act="plan" data-id="${p.id}" style="margin-top:6px">Pilih paket</button></div>`;
-  }).join('');
   const list = D.PLAYBOOKS.filter((p) => p.exam === 'Umum' || p.exam === s.target).map((p) => `<div class="item"><div><b>${esc(p.title)}</b>
     <p class="small muted">${esc(p.by)} · ${p.min} menit baca · ditinjau tim Terang</p></div><button class="btn small" data-act="pb-open" data-id="${p.id}">Baca</button></div>`).join('');
   return `<div class="page-head"><div><h1>Poin & Jurus Alumni</h1><p>Poin dikasih buat kemajuan nyata, bukan lamanya kamu nongkrong di layar.</p></div></div>
@@ -432,7 +422,7 @@ function viewPoints() {
         <div class="card">${premium}${s.vouchers ? `<p class="small" style="margin-top:8px">${icon('ticket', 16)} Voucher diskon 20%: ${s.vouchers} buah</p>` : ''}</div></div>
       <div class="card"><h2 style="margin-bottom:6px">Cara dapet poin</h2>${D.EARN_RULES.map(([a, b]) => `<div class="item"><span>${a}</span><span class="tag">${b}</span></div>`).join('')}</div></div>
     <div class="card"><h2 style="margin-bottom:6px">Katalog Hadiah</h2>${cat}<p class="small muted" style="margin-top:8px">Nggak ada hadiah uang tunai. Hadiah dari mitra masih contoh.</p></div>
-    <div class="card"><div class="card-head"><h2>Paket Premium</h2></div><p class="small muted" style="margin-bottom:16px">Semua paket buka: ${D.PLAN_FEATURES.join(' · ')}. Harga di bawah masih contoh, belum final.</p><div class="plans">${plans}</div></div>
+    <div id="pass">${PS.passSection()}</div>
     <div class="card"><h2 style="margin-bottom:6px">Jurus Alumni</h2>${list}
       <p class="small muted" style="margin-top:8px">Konten contoh buat prototipe, bukan dari alumni sungguhan.</p></div>
     <div class="card"><div class="say">${mascot('cheer', 56)}<div><h2>Ajak Teman, Dapet Poin</h2><p class="small muted">Bagikan kodemu. Tiap teman yang gabung dan selesaiin cek posisi, kalian berdua dapet bonus poin (jumlahnya contoh).</p></div></div>
@@ -624,15 +614,6 @@ const ACT = {
     s.ledger.unshift({ t: `${it.cost === 0 ? 'Klaim' : 'Tukar'}: ${it.name}`, p: -it.cost, d: toISO(today()) }); St.save();
     ribbon(it.days ? `Premium aktif ${it.days} hari lagi!` : `Berhasil: ${it.name}`); render(true);
   },
-  plan: (el) => {
-    const p = D.PLANS.find((x) => x.id === el.dataset.id), s = S(); const { perMonth, save } = planPrice(p);
-    const disc = s.vouchers > 0 ? Math.round(p.price * 0.8 / 100) * 100 : null;
-    openDlg(`Paket Premium ${p.name}`, `<div class="say">${mascot('cheer', 60)}<div><div class="price">${rp(p.price)}</div><p class="small muted">${p.months > 1 ? `≈ ${rp(perMonth)}/bulan · hemat ${save}% dibanding bayar bulanan` : 'Bayar per bulan'}</p></div></div>
-      <ul class="list-plain">${D.PLAN_FEATURES.map((f) => `<li>${esc(f)}</li>`).join('')}</ul>
-      ${disc ? `<p class="pill gold">${icon('ticket', 16)} Dengan voucher 20%: ${rp(disc)}</p>` : '<p class="small muted">Punya voucher diskon? Tukar di Katalog Hadiah pakai poinmu.</p>'}
-      <p class="small muted">Harga contoh. Pembayaran belum tersambung di prototipe ini.</p>
-      <button class="btn" data-act="dlg-close">Oke, ngerti</button>`);
-  },
   'pb-open': (el) => { const p = D.PLAYBOOKS.find((x) => x.id === el.dataset.id); openDlg(esc(p.title), `<p class="small muted">${esc(p.by)} · ditinjau tim Terang sebelum terbit · konten contoh</p><ul class="list-plain">${p.points.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`); },
   'share-open': () => shareDialog(),
   'share-create': () => {
@@ -680,7 +661,7 @@ const CHG = {
   'set-motion': (el) => { S().reduceMotion = el.checked; St.save(); applyTheme(); },
   'share-consent': () => { const ok = $('#sh-c1').checked && (!$('#sh-c2') || $('#sh-c2').checked); $('#sh-go').disabled = !ok; },
 };
-Object.assign(ACT, AI.acts, KT.acts, EX.acts, OBD.acts, EN.acts); // aksi dari modul fitur
+Object.assign(ACT, AI.acts, KT.acts, EX.acts, OBD.acts, EN.acts, PS.acts); // aksi dari modul fitur
 Object.assign(CHG, OBD.changes);
 ACT.poke = (el) => { OBD.acts.poke(el); const l = $('#hero-line'); if (l) l.innerHTML = CP.POKE[Math.floor(Math.random() * CP.POKE.length)]; };
 ACT.node = (el) => {
